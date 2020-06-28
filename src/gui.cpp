@@ -5,9 +5,8 @@
    $Creator: Thierry Raeber$
    ======================================================================== */
 #include <raylib.h>
-#include <stb.h>
+#include <stb/stb.h>
 
-#include "edit_mode.h"
 #include "gui_code.cpp"
 #include "gui_config.cpp"
 

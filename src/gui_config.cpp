@@ -52,7 +52,7 @@ Rectangle displayNameRect = {displayRectXAnchor + padding,
                              displayRectYAnchor + padding,
                              selectMainRectWidth, 30};
 Rectangle displayTypeRect = {displayNameRect.x + displayNameRect.width + padding,
-                             displayRectYAnchor + padding, 120 * scaleFactor, 30 * scaleFactor};
+                             displayRectYAnchor + padding, 140 * scaleFactor, textRectHeight * scaleFactor};
 Rectangle displayIncreaseRect = {displayTypeRect.x + displayTypeRect.width + padding,
                                  displayRectYAnchor + padding, 50 * scaleFactor, 30 * scaleFactor};
 Rectangle displayDescRect = {displayRectXAnchor + padding, displayRectYAnchor + padding + 40 * scaleFactor,
@@ -64,8 +64,8 @@ Rectangle displayMainRect = {displayRectXAnchor, displayRectYAnchor,
                              displayMainRectWidth, displayMainRectHeight};
 Rectangle displayDependenciesRect = {};
 Rectangle displayPriceRect = {};
-Rectangle displaySaveRect = {displayRectXAnchor, displayRectYAnchor + displayMainRectWidth + padding,
-                             100, 30};
+Rectangle saveRect = {displayRectXAnchor, displayRectYAnchor + displayMainRectWidth + padding,
+                      100, 30};
 
 TextRect nameRect = {"name", displayNameRect};
 TextRect typeRect = {"type", displayTypeRect};
@@ -74,7 +74,7 @@ TextRect descRect = {"desc", displayDescRect};
 
 TextRect *displayRectList[] = { &nameRect, &typeRect, &incrRect, &descRect};
 char newTypeReceiver[30] = {};
-char *typesList[] = {"science", "incremental", "knowledge", "structure"};
+char *typesList[] = {"science", "incremental", "knowledge", "structure", "software"};
 
 struct SelectMenu {
     char *destination;
@@ -146,9 +146,6 @@ void DrawSelectUpgradeMenu()
         Rectangle rec = selectRectList[i];
         if (CheckCollisionPointRec(GetMousePosition(), rec)) {
             DrawRectangleRec(rec, LIGHTGRAY);
-            if (IsMouseButtonDown(MOUSE_LEFT_BUTTON)) {
-                SelectCurrentUpgrade(&state.upgrades_list[i]);
-            }
         }
         DrawRectangleLinesEx(selectRectList[i], 1, BLACK);
         upgrade cur = state.upgrades_list[i];
@@ -160,14 +157,6 @@ void DrawSelectUpgradeMenu()
 
 void DrawDisplayUpgrade()
 {
-    // Save button
-    if (CheckCollisionPointRec(GetMousePosition(), displaySaveRect)) {
-        DrawRectangleRec(displaySaveRect, LIGHTGRAY);
-        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-            SaveGame();
-        }
-    }
-
     DrawRectangleLinesEx(displayMainRect, 2, BLACK);
 
     for (int i = 0; i < (sizeof(displayRectList) / sizeof(displayRectList[0])); ++i) {
@@ -205,9 +194,7 @@ void DrawDisplayUpgrade()
 
             } else if (AreStrEquals(tr.id, "type")) {
                 if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
-                    OpenSelectMenu(newTypeReceiver,
-                                   typesList, sizeof(typesList) / sizeof(typesList[0]),
-                                   tr.rect.x, tr.rect.y + tr.rect.height);
+
                 }
             }
 
@@ -216,12 +203,55 @@ void DrawDisplayUpgrade()
         DrawTextRect(tr);
     }
 
-    DrawRectangleLinesEx(displaySaveRect, 2, BLACK);
-    DrawText("Save", displaySaveRect.x + padding, displaySaveRect.y + padding, fontSize, MAROON);
+    if (CheckCollisionPointRec(GetMousePosition(), saveRect)) {
+        DrawRectangleRec(saveRect, LIGHTGRAY);
+    }
+
+
+    DrawRectangleLinesEx(saveRect, 2, BLACK);
+    DrawText("Save", saveRect.x + padding, saveRect.y + padding, fontSize, MAROON);
     DrawSelectionMenu();
-    if (IsMouseButtonDown(MOUSE_LEFT_BUTTON) &&
-        !CheckCollisionPointRec(GetMousePosition(), SelectMenu.rect)) {
+}
+
+void CheckMouseClick()
+{
+
+    Vector2 mouse = GetMousePosition();
+
+    if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+
+        // Select upgrade in left panel
+        for (int i = 0; i < numUpgrades; ++i) {
+            Rectangle rec = selectRectList[i];
+            if (CheckCollisionPointRec(mouse, rec)) {
+                SelectCurrentUpgrade(&state.upgrades_list[i]);
+            }
+        }
+
+        // Select new type
+        if (SelectMenu.visible &&
+            CheckCollisionPointRec(mouse, SelectMenu.rect)) {
+            int item_idx = (mouse.y - SelectMenu.rect.y) / textRectHeight;
+            memset(displayCurrentUpgrade->type, 0, sizeof(displayCurrentUpgrade->type));
+            memcpy(displayCurrentUpgrade->type,
+                   SelectMenu.items_list[item_idx],
+                   strlen(SelectMenu.items_list[item_idx]));
+        }
+
+
         SelectMenu.visible = false;
+
+        // Close opened MenuConfig must be after closure test
+        if (CheckCollisionPointRec(mouse, typeRect.rect)){
+            OpenSelectMenu(newTypeReceiver,
+                           typesList, sizeof(typesList) / sizeof(typesList[0]),
+                           typeRect.rect.x, typeRect.rect.y + typeRect.rect.height);
+        }
+
+        else if (CheckCollisionPointRec(mouse, saveRect))
+        {
+            SaveGame();
+        }
     }
 }
 
@@ -246,6 +276,7 @@ void DrawEditMode(float panelWidth, float panelHeight)
             ClearBackground(RAYWHITE);
             DrawSelectUpgradeMenu();
             DrawDisplayUpgrade();
+            CheckMouseClick();
         }
         EndDrawing();
     }

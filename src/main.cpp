@@ -1,5 +1,5 @@
 #include "gui.cpp"
-#include "edit_mode.cpp"
+// #include "edit_mode.cpp"
 
 #include "game.cpp"
 #include "game_handler.cpp"

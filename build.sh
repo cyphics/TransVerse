@@ -8,10 +8,9 @@ ctags -e -R .
 build()
 {
     if cc -g -Wno-write-strings \
-          -Wno-narrowing -Wno-enum-compare \
-           -o build/TransVerse \
-           -lm -lraylib \
-           src/main.cpp -Ilib/stb/
+          -o build/TransVerse \
+          -lm -lraylib \
+          src/main.cpp -Ilib/stb/
     then
         compiled=true
     else

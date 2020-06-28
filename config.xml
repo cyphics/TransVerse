@@ -4,7 +4,7 @@
 <Upgrade>
 <id>Terminal</id>
 <type>structure</type>
-<desc>another desc</desc>
+<desc>Your best friend in this adventure.</desc>
 <Price>
 <Resource>
 <type>energy</type>

@@ -130,7 +130,7 @@ bool LoadGame()
 }
 
 void SaveGame()
- {
+{
     SaveGameToDisk(CONFIG_FILE, &state);
     printf("Game saved!\n");
 }
