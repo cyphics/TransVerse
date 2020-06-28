@@ -1,0 +1,3 @@
+* Implementation
+** TODO Implement dependencies
+** TODO Implement initial prices
