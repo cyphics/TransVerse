@@ -87,6 +87,7 @@ char depsList[MAX_DEPENDENCIES * 35];
 
 char depend_list[MAX_DEPENDENCIES][30];
 int depend_list_idx = 0;
+bool isAboutToRemoveDependency = false;
 
 TextRect *displayRectList[] = { &nameRect, &typeRect, &incrRect, &descRect, &dependRect};
 char newTypeReceiver[30] = {};
@@ -143,6 +144,18 @@ void DrawTextRect(TextRect tr)
     DrawText(tr.text, tr.rect.x + padding, tr.rect.y + padding * 2, fontSize, MAROON);
 }
 
+void GenerateDependencyListString()
+{
+    memset(depsList, 0, sizeof(depsList));
+    for (int i = 0; i < depend_list_idx; ++i) {
+        strcat(depsList, depend_list[i]);
+        strcat(depsList, "\n");
+    }
+    memcpy(dependRect.text, depsList, sizeof(depsList));
+    dependRect.rect.height = (textRectHeight + padding) * depend_list_idx;
+    if (dependRect.rect.height < textRectHeight) dependRect.rect.height = textRectHeight;
+}
+
 void AddDependency(char *dependency)
 {
     // Add dependency to the list
@@ -151,13 +164,29 @@ void AddDependency(char *dependency)
     }
 
     strcat(depend_list[depend_list_idx], dependency);
+    memcpy(displayCurrentUpgrade->dependencies[depend_list_idx], dependency, strlen(dependency));
+
     depend_list_idx++;
 
+    GenerateDependencyListString();
+}
+
+void RemoveDependency(Vector2 mouse)
+{
+    // int item_idx = (mouse.y - SelectMenu.rect.y) / textRectHeight;
+    int dep_to_remove_idx = (mouse.y - dependRect.rect.y ) / (textRectHeight + padding);
+    printf("Removing dependency %s, idx %d\n", depend_list[dep_to_remove_idx], dep_to_remove_idx);
+
+    for (int i = dep_to_remove_idx; i < depend_list_idx; ++i) {
+        memcpy(depend_list[i], depend_list[i+1], sizeof(depend_list[i+1]));
+        memcpy(displayCurrentUpgrade->dependencies[i], displayCurrentUpgrade->dependencies[i+1],
+               sizeof(displayCurrentUpgrade->dependencies[i+1]));
+    }
+
+    depend_list_idx--;
+
     // Format the string to be displayed on screen
-    strcat(depsList, depend_list[depend_list_idx-1]);
-    strcat(depsList, "\n");
-    memcpy(dependRect.text, depsList, sizeof(depsList));
-    dependRect.rect.height = (textRectHeight + padding) * depend_list_idx;
+    GenerateDependencyListString();
 }
 
 void SelectCurrentUpgrade(upgrade *original)
@@ -167,7 +196,6 @@ void SelectCurrentUpgrade(upgrade *original)
     strncpy(nameRect.text, original->id, sizeof(original->id));
     strncpy(typeRect.text, original->type, sizeof(original->type));
     strncpy(descRect.text, original->description, sizeof(original->description));
-    memset(depsList, 0, sizeof(depsList));
     depend_list_idx = 0;
     memset(dependRect.text, 0, sizeof(dependRect.text));
     memset(depend_list, 0, sizeof(depend_list));
@@ -278,14 +306,22 @@ void DrawDisplayUpgrade()
 }
 
 
-void CheckMouseClick()
+void HandleMouseClick()
 {
+
+    /* On mouse click down, activate pending action,
+       only activated on button release.
+       Pending action is cancelled on dragged gesture
+    */
+
     int gesture = GetGestureDetected();
     Vector2 mouse = GetMousePosition();
 
-
     if (isDragging && IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
         // Check if dropped in dependency list
+        if (CheckCollisionPointRec(mouse, dependRect.rect)) {
+            AddDependency(dragedUpgrade->id);
+        }
         isDragging = false;
 
     }
@@ -294,6 +330,7 @@ void CheckMouseClick()
         // Cancel pending actions
         isAboutToSelect = false;
         isAboutToSave = false;
+        isAboutToRemoveDependency = false;
 
         if (!isDragging) {
             for (int i = 0; i < numUpgrades; ++i) {
@@ -307,6 +344,11 @@ void CheckMouseClick()
         }
     }
 
+    if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)) {
+        if (CheckCollisionPointRec(mouse, dependRect.rect)) {
+            isAboutToRemoveDependency = true;
+        }
+    }
     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
         // Prepare actions that will be triggered on release
         for (int i = 0; i < numUpgrades; ++i) {
@@ -318,6 +360,7 @@ void CheckMouseClick()
         if (CheckCollisionPointRec(mouse, saveRect)) {
             isAboutToSave = true;
         }
+
     }
     if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
 
@@ -358,6 +401,12 @@ void CheckMouseClick()
             isAboutToSave = false;
         }
     }
+
+    if (IsMouseButtonReleased(MOUSE_RIGHT_BUTTON)) {
+        if (isAboutToRemoveDependency) {
+            RemoveDependency(mouse);
+        }
+    }
 }
 
 void DrawEditMode(float panelWidth, float panelHeight)
@@ -381,7 +430,7 @@ void DrawEditMode(float panelWidth, float panelHeight)
             ClearBackground(RAYWHITE);
             DrawSelectUpgradeMenu();
             DrawDisplayUpgrade();
-            CheckMouseClick();
+            HandleMouseClick();
         }
         EndDrawing();
     }
