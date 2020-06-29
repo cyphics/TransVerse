@@ -1,6 +1,4 @@
 #include "gui.cpp"
-// #include "edit_mode.cpp"
-
 #include "game.cpp"
 #include "game_handler.cpp"
 #include "game_debug.cpp"

@@ -13,6 +13,7 @@ extern char *CONFIG_FILE;
 
 // extern GameState state;
 Font font;
+
 const int numUpgrades = MAX_UPGRADES_AMOUNT;
 
 struct TextRect {
@@ -32,6 +33,11 @@ float textRectHeight = 30 * scaleFactor;
 char currentUpgradeIncreaseString[6];
 bool mouseOnText = false;
 
+bool isDragging = false;
+TextRect draggedRect;
+upgrade *dragedUpgrade;
+
+
 // Upgrade selection panel
 
 float selectUpgradeRectWidth = maxUpgradeNameLength;
@@ -42,6 +48,7 @@ Rectangle selectMainRect = {xAnchor, yAnchor,
                             selectMainRectWidth, selectMainRectHeight};
 
 Rectangle selectRectList[numUpgrades] = {};
+bool isAboutToSelect = false;
 
 // Upgrade edit panel
 upgrade *displayCurrentUpgrade;
@@ -66,6 +73,7 @@ Rectangle displayDependenciesRect = {};
 Rectangle displayPriceRect = {};
 Rectangle saveRect = {displayRectXAnchor, displayRectYAnchor + displayMainRectWidth + padding,
                       100, 30};
+bool isAboutToSave = false;
 
 TextRect nameRect = {"name", displayNameRect};
 TextRect typeRect = {"type", displayTypeRect};
@@ -157,6 +165,7 @@ void DrawSelectUpgradeMenu()
 
 void DrawDisplayUpgrade()
 {
+    Vector2 mouse = GetMousePosition();
     DrawRectangleLinesEx(displayMainRect, 2, BLACK);
 
     for (int i = 0; i < (sizeof(displayRectList) / sizeof(displayRectList[0])); ++i) {
@@ -164,7 +173,7 @@ void DrawDisplayUpgrade()
         TextRect tr = *displayRectList[i];
 
 
-        if (CheckCollisionPointRec(GetMousePosition(), tr.rect)) mouseOnText = true;
+        if (CheckCollisionPointRec(mouse, tr.rect)) mouseOnText = true;
         else mouseOnText = false;
 
         if (mouseOnText)
@@ -176,21 +185,35 @@ void DrawDisplayUpgrade()
                 framesCounter++;
                 int cursorPos = strlen(tr.text);
                 int key = GetKeyPressed();
-                while(key > 0)
-                {
-                    if ((key >= 32) && (key <= 125)) {
-                        tr.text[cursorPos] = (char)key;
-                        tr.text[cursorPos + 1] = '\0';
-                    }
-                    key = GetKeyPressed();
-                }
-                if (IsKeyPressed(KEY_BACKSPACE)) {
-                    tr.text[cursorPos - 1] = '\0';
-                }
                 if (((framesCounter/20)%2) == 0)
                     DrawText("_", tr.rect.x + 6 + MeasureText(tr.text, fontSize),
                              tr.rect.y + 8, fontSize, MAROON);
                 if (framesCounter > 200) framesCounter = 0;
+                if (IsKeyPressed(KEY_BACKSPACE)) {
+                    tr.text[cursorPos - 1] = '\0';
+                }
+                if (AreStrEquals(tr.id, "inc")) {
+                    while(key > 0)
+                    {
+                        if ((key >= 46) && (key <= 57)) {
+                            tr.text[cursorPos] = (char)key;
+                            tr.text[cursorPos + 1] = '\0';
+                            displayCurrentUpgrade->increase_factor = atof(incrRect.text);
+                        }
+                        key = GetKeyPressed();
+                    }
+                } else {
+                    while(key > 0)
+                    {
+                        if ((key >= 32) && (key <= 125)) {
+                            tr.text[cursorPos] = (char)key;
+                            tr.text[cursorPos + 1] = '\0';
+                            printf("key: %d\n", key);
+                        }
+                        key = GetKeyPressed();
+                    }
+
+                }
 
             } else if (AreStrEquals(tr.id, "type")) {
                 if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
@@ -203,7 +226,7 @@ void DrawDisplayUpgrade()
         DrawTextRect(tr);
     }
 
-    if (CheckCollisionPointRec(GetMousePosition(), saveRect)) {
+    if (CheckCollisionPointRec(mouse, saveRect)) {
         DrawRectangleRec(saveRect, LIGHTGRAY);
     }
 
@@ -211,22 +234,69 @@ void DrawDisplayUpgrade()
     DrawRectangleLinesEx(saveRect, 2, BLACK);
     DrawText("Save", saveRect.x + padding, saveRect.y + padding, fontSize, MAROON);
     DrawSelectionMenu();
+
+    if (isDragging) {
+        draggedRect.rect.x = mouse.x;
+        draggedRect.rect.y = mouse.y;
+        DrawTextRect(draggedRect);
+    }
 }
+
 
 void CheckMouseClick()
 {
-
+    int gesture = GetGestureDetected();
     Vector2 mouse = GetMousePosition();
 
-    if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
 
-        // Select upgrade in left panel
+    if (isDragging && IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
+        // Check if dropped in dependency list
+        isDragging = false;
+
+    }
+
+    if (gesture == GESTURE_DRAG) {
+        // Cancel pending actions
+        isAboutToSelect = false;
+        isAboutToSave = false;
+
+        if (!isDragging) {
+            for (int i = 0; i < numUpgrades; ++i) {
+                Rectangle rec = selectRectList[i];
+                if (CheckCollisionPointRec(mouse, rec)) {
+                    isDragging = true;
+                    dragedUpgrade = &state.upgrades_list[i];
+                    draggedRect.text = dragedUpgrade->id;
+                }
+            }
+        }
+    }
+
+    if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+        // Prepare actions that will be triggered on release
         for (int i = 0; i < numUpgrades; ++i) {
             Rectangle rec = selectRectList[i];
             if (CheckCollisionPointRec(mouse, rec)) {
-                SelectCurrentUpgrade(&state.upgrades_list[i]);
+                isAboutToSelect = true;
             }
         }
+        if (CheckCollisionPointRec(mouse, saveRect)) {
+            isAboutToSave = true;
+        }
+    }
+    if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
+
+        // Select upgrade in left panel
+        if (isAboutToSelect) {
+            for (int i = 0; i < numUpgrades; ++i) {
+                Rectangle rec = selectRectList[i];
+                if (CheckCollisionPointRec(mouse, rec)) {
+                    SelectCurrentUpgrade(&state.upgrades_list[i]);
+                }
+            }
+            isAboutToSelect = false;
+        }
+
 
         // Select new type
         if (SelectMenu.visible &&
@@ -247,10 +317,10 @@ void CheckMouseClick()
                            typesList, sizeof(typesList) / sizeof(typesList[0]),
                            typeRect.rect.x, typeRect.rect.y + typeRect.rect.height);
         }
-
-        else if (CheckCollisionPointRec(mouse, saveRect))
+        else if (CheckCollisionPointRec(mouse, saveRect) && isAboutToSave)
         {
             SaveGame();
+            isAboutToSave = false;
         }
     }
 }
