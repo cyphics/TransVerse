@@ -17,9 +17,9 @@ Font font;
 const int numUpgrades = MAX_UPGRADES_AMOUNT;
 
 struct TextRect {
-    char *id;
+    char id[20];
     Rectangle rect;
-    char* text;
+    char text[200];
 };
 
 // Common
@@ -64,6 +64,9 @@ Rectangle displayIncreaseRect = {displayTypeRect.x + displayTypeRect.width + pad
                                  displayRectYAnchor + padding, 50 * scaleFactor, 30 * scaleFactor};
 Rectangle displayDescRect = {displayRectXAnchor + padding, displayRectYAnchor + padding + 40 * scaleFactor,
                              displayNameRect.width + displayTypeRect.width + displayIncreaseRect.width + 2 * padding, 60 * scaleFactor};
+Rectangle displayDependRect = {displayRectXAnchor + padding,
+                               displayDescRect.y + displayDescRect.height + padding,
+                               displayNameRect.width, textRectHeight};
 
 float displayMainRectWidth = displayNameRect.width + displayTypeRect.width + displayIncreaseRect.width + 4 * padding;
 float displayMainRectHeight = 300.0f * scaleFactor;
@@ -77,10 +80,15 @@ bool isAboutToSave = false;
 
 TextRect nameRect = {"name", displayNameRect};
 TextRect typeRect = {"type", displayTypeRect};
-TextRect incrRect = {"inc", displayIncreaseRect, currentUpgradeIncreaseString};
-TextRect descRect = {"desc", displayDescRect};
+TextRect incrRect = {"increase", displayIncreaseRect};
+TextRect descRect = {"description", displayDescRect};
+TextRect dependRect = {"dependencies", displayDependRect};
+char depsList[MAX_DEPENDENCIES * 35];
 
-TextRect *displayRectList[] = { &nameRect, &typeRect, &incrRect, &descRect};
+char depend_list[MAX_DEPENDENCIES][30];
+int depend_list_idx = 0;
+
+TextRect *displayRectList[] = { &nameRect, &typeRect, &incrRect, &descRect, &dependRect};
 char newTypeReceiver[30] = {};
 char *typesList[] = {"science", "incremental", "knowledge", "structure", "software"};
 
@@ -131,17 +139,44 @@ void OpenSelectMenu(char *destination, char **items_list, int num_items, float a
 void DrawTextRect(TextRect tr)
 {
     DrawRectangleLinesEx(tr.rect, 1, BLACK);
-    DrawText(tr.text, tr.rect.x + padding, tr.rect.y + padding, fontSize, MAROON);
+    DrawText(tr.id, tr.rect.x + padding, tr.rect.y + padding/3, fontSize / 2, GRAY);
+    DrawText(tr.text, tr.rect.x + padding, tr.rect.y + padding * 2, fontSize, MAROON);
+}
+
+void AddDependency(char *dependency)
+{
+    // Add dependency to the list
+    for (int i = 0; i < depend_list_idx; ++i) {
+        if (AreStrEquals(depend_list[i], dependency)) return;
+    }
+
+    strcat(depend_list[depend_list_idx], dependency);
+    depend_list_idx++;
+
+    // Format the string to be displayed on screen
+    strcat(depsList, depend_list[depend_list_idx-1]);
+    strcat(depsList, "\n");
+    memcpy(dependRect.text, depsList, sizeof(depsList));
+    dependRect.rect.height = (textRectHeight + padding) * depend_list_idx;
 }
 
 void SelectCurrentUpgrade(upgrade *original)
 {
     displayCurrentUpgrade = original;
     sprintf(currentUpgradeIncreaseString, "%.2f", displayCurrentUpgrade->increase_factor);
-    nameRect.text = original->id;
-    typeRect.text = original->type;
-    descRect.text = original->description;
-
+    strncpy(nameRect.text, original->id, sizeof(original->id));
+    strncpy(typeRect.text, original->type, sizeof(original->type));
+    strncpy(descRect.text, original->description, sizeof(original->description));
+    memset(depsList, 0, sizeof(depsList));
+    depend_list_idx = 0;
+    memset(dependRect.text, 0, sizeof(dependRect.text));
+    memset(depend_list, 0, sizeof(depend_list));
+    for (int i = 0; i < MAX_DEPENDENCIES; ++i) {
+        char *dep = original->dependencies[i];
+        if (!AreStrEquals(dep, "")) {
+            AddDependency(dep);
+        }
+    }
 }
 
 void DrawSelectUpgradeMenu()
@@ -179,8 +214,8 @@ void DrawDisplayUpgrade()
         if (mouseOnText)
         {
             if (AreStrEquals(tr.id, "name") ||
-                AreStrEquals(tr.id, "inc") ||
-                AreStrEquals(tr.id, "desc"))
+                AreStrEquals(tr.id, "increase") ||
+                AreStrEquals(tr.id, "description"))
             {
                 framesCounter++;
                 int cursorPos = strlen(tr.text);
@@ -192,7 +227,7 @@ void DrawDisplayUpgrade()
                 if (IsKeyPressed(KEY_BACKSPACE)) {
                     tr.text[cursorPos - 1] = '\0';
                 }
-                if (AreStrEquals(tr.id, "inc")) {
+                if (AreStrEquals(tr.id, "increas")) {
                     while(key > 0)
                     {
                         if ((key >= 46) && (key <= 57)) {
@@ -266,7 +301,7 @@ void CheckMouseClick()
                 if (CheckCollisionPointRec(mouse, rec)) {
                     isDragging = true;
                     dragedUpgrade = &state.upgrades_list[i];
-                    draggedRect.text = dragedUpgrade->id;
+                    strncpy(draggedRect.text, dragedUpgrade->id, sizeof(dragedUpgrade->id));
                 }
             }
         }

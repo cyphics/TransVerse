@@ -26,7 +26,8 @@ echo ""
 echo "Program compiled in $elapsed_compile"
 
 if [ "$compiled" = true ]; then
-    ./build/TransVerse
+    cd build
+    ./TransVerse
 fi
 
 # ./tests

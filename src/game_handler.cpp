@@ -123,9 +123,12 @@ UpgradeInfo GetInfo(UPGRADE handle)
 bool LoadGame()
 {
     bool result = LoadGameFromFile(CONFIG_FILE, &state);
-    UpdateAvailableUpgrades();
-    UpdateAffordableUpgrades();
-    // PrintGameState(state);
+    if (result) {
+        UpdateAvailableUpgrades();
+        UpdateAffordableUpgrades();
+        // PrintGameState(state);
+    }
+
     return result;
 }
 

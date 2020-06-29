@@ -10,7 +10,9 @@ extern char *CONFIG_FILE;
 
 int main(int argc, char *argv[])
 {
-    LoadGame();
+
     // CreateFirstXmlFile();
-    SartGui();
+    if (LoadGame()) {
+        SartGui();
+    }
 }
