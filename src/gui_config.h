@@ -8,6 +8,6 @@
 
 #define EDIT_MODE_H
 
-void DrawEditMode(float panelWidth, float panelHeight);
+void DrawConfigPanel(float panelWidth, float panelHeight);
 
 #endif

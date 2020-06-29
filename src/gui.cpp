@@ -20,7 +20,7 @@ void SartGui()
 {
     SetTargetFPS(60);
     InitWindow(screenWidth, screenHeight, "raylib [core] example - basic window");
-    DrawEditMode(screenWidth, screenHeight);
+    DrawConfigPanel(screenWidth, screenHeight);
     // DrawConfigMenu();
     // TypeCode();
     CloseWindow();
