@@ -70,6 +70,7 @@ float addButtonWidth = 20;
 Rectangle addUpgradeButton = {xAnchor, selectMainRect.y + selectMainRect.height + padding,
                               addButtonWidth, addButtonWidth};
 bool isAboutToAddNewUpgrade = false;
+bool isAboutToRemoveUpgrade = false;
 
 char *currentTypeList = "structure";
 int amountSelectableUpgrades = 0;
@@ -160,8 +161,9 @@ void BuildSelectUpgradesList(char *newTypeList)
                                                             state.upgrades_list[i].id};
             amountSelectableUpgrades++;
         }
-
     }
+    selectMainRect.height = (textRectHeight + padding) * amountSelectableUpgrades + 2 * padding;
+    addUpgradeButton.y = selectMainRect.y + selectMainRect.height + padding;
 }
 
 void GenerateDependencyListString()
@@ -215,9 +217,26 @@ void AddNewUpgrade()
         if (AreStrEquals(state.upgrades_list[i].id, "")) {
             memcpy(state.upgrades_list[i].id, "New upgrade", strlen("New ugprade"));
             memcpy(state.upgrades_list[i].type, currentTypeList, strlen(currentTypeList));
+            break; // Avoid create new upgrade on all empty slots
         }
     }
     BuildSelectUpgradesList(currentTypeList);
+}
+
+void RemoveUpgrade(Vector2 mouse)
+{
+    int selectUpIdx = 0;
+    for (int i = 0; i < numUpgrades; ++i) {
+        upgrade *u = &state.upgrades_list[i];
+        if (AreStrEquals(u->type, currentTypeList)) {
+            if (CheckCollisionPointRec(mouse, selectUpgradesList[selectUpIdx].rect)) {
+                *u = (upgrade){0};
+                BuildSelectUpgradesList(currentTypeList);
+            }
+            selectUpIdx++;
+        }
+
+    }
 }
 
 void AddResource(resource res)
@@ -445,12 +464,22 @@ void HandleMouseClick()
         if (CheckCollisionPointRec(mouse, editDependenciesInteract.rect)) {
             isAboutToRemoveDependency = true;
         }
-    }
-    if (IsMouseButtonReleased(MOUSE_RIGHT_BUTTON) && isAboutToRemoveDependency) {
-        RemoveDependency(mouse);
-        isAboutToRemoveDependency = false;
-    }
+        for (int i = 0; i < amountSelectableUpgrades; ++i) {
+            if (CheckCollisionPointRec(mouse, selectUpgradesList[i].rect)) {
+                isAboutToRemoveUpgrade = true;
+            }
+        }
 
+    }
+    if (IsMouseButtonReleased(MOUSE_RIGHT_BUTTON)){
+        if (isAboutToRemoveDependency){
+            RemoveDependency(mouse);
+            isAboutToRemoveDependency = false;
+        }
+        if (isAboutToRemoveUpgrade) {
+            RemoveUpgrade(mouse);
+        }
+    }
 
 }
 
