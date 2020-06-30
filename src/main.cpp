@@ -8,6 +8,15 @@
 
 extern char *CONFIG_FILE;
 
+typedef struct Button{
+    void *function;
+
+}Button;
+
+void Print()
+{
+    printf("Success!%s\n");
+}
 int main(int argc, char *argv[])
 {
 
@@ -15,4 +24,6 @@ int main(int argc, char *argv[])
     if (LoadGame()) {
         SartGui();
     }
+    // Button b = {&Print};
+
 }
