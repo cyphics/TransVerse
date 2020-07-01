@@ -8,6 +8,7 @@
 
 #include "helper.h"
 #include "game_handler.h"
+#include "gui.h"
 
 extern char *CONFIG_FILE;
 
@@ -16,15 +17,8 @@ Font font;
 
 const int numUpgrades = MAX_UPGRADES_AMOUNT;
 
-struct Interact {
-    char *id;
-    Rectangle rect;
-    char *text;
-    bool isOvered = false;
-    void *onClic;
-};
-
 // Common
+bool initDone = false;
 float scaleFactor = 1;
 int framesCounter = 0;
 float maxUpgradeNameLength = 250 * scaleFactor;
@@ -106,15 +100,16 @@ Rectangle displayMainRect = {displayRectXAnchor, displayRectYAnchor,
                              displayMainRectWidth, displayMainRectHeight};
 Rectangle saveRect = {displayRectXAnchor, displayRectYAnchor + displayMainRectWidth + padding,
                       100, 30};
+Interact saveButton = {"saveBtn", "", saveRect,"Save"};
 bool isAboutToSave = false;
 
-Interact editNameInteract = {"name", displayNameRect};
-Interact editTypeInteract = {"type", displayTypeRect};
-Interact editIncreaseInteract = {"increase", displayIncreaseRect};
-Interact editDescInteract = {"description", displayDescRect};
-Interact editDependenciesInteract = {"dependencies", displayDependRect};
-Interact editResourceInteract = {"resource", displayResourceRect};
-Interact editAmountInteract = {"amount", displayAmountRect};
+Interact editNameInteract = {"name", "name", displayNameRect};
+Interact editTypeInteract = {"type", "type", displayTypeRect};
+Interact editIncreaseInteract = {"increase", "increase", displayIncreaseRect};
+Interact editDescInteract = {"description", "description", displayDescRect};
+Interact editDependenciesInteract = {"dependencies", "dependencies", displayDependRect};
+Interact editResourceInteract = {"resource", "resource", displayResourceRect};
+Interact editAmountInteract = {"amount", "amount", displayAmountRect};
 
 char dependenciesStringToDisplay[MAX_DEPENDENCIES * 35];
 
@@ -147,6 +142,7 @@ struct DropDownMenu {
     bool visible = false;
 } DropDownMenu;
 
+
 void BuildSelectUpgradesList(char *newTypeList)
 {
     currentTypeList = newTypeList;
@@ -154,7 +150,7 @@ void BuildSelectUpgradesList(char *newTypeList)
     memset(selectUpgradesList, 0, sizeof(selectUpgradesList));
     for (int i = 0; i < numUpgrades; ++i) {
         if (AreStrEquals(state.upgrades_list[i].type, currentTypeList)) {
-            selectUpgradesList[amountSelectableUpgrades] = {"",
+            selectUpgradesList[amountSelectableUpgrades] = {"", "",
                                                             {xAnchor + padding,
                                                              yAnchor + padding +  (textRectHeight + padding) * amountSelectableUpgrades,
                                                              selectUpgradeRectWidth, textRectHeight},
@@ -214,7 +210,7 @@ void RemoveDependency(Vector2 mouse)
 void AddNewUpgrade()
 {
     for (int i = 0; i < numUpgrades; ++i) {
-        if (AreStrEquals(state.upgrades_list[i].id, "")) {
+        if (IsEmpty(state.upgrades_list[i].id)) {
             memcpy(state.upgrades_list[i].id, "New upgrade", strlen("New ugprade"));
             memcpy(state.upgrades_list[i].type, currentTypeList, strlen(currentTypeList));
             break; // Avoid create new upgrade on all empty slots
@@ -229,7 +225,7 @@ void RemoveUpgrade(Vector2 mouse)
     for (int i = 0; i < numUpgrades; ++i) {
         upgrade *u = &state.upgrades_list[i];
         if (AreStrEquals(u->type, currentTypeList)) {
-            if (CheckCollisionPointRec(mouse, selectUpgradesList[selectUpIdx].rect)) {
+            if (selectUpgradesList[selectUpIdx].isHovered) {
                 *u = (upgrade){0};
                 BuildSelectUpgradesList(currentTypeList);
             }
@@ -293,20 +289,10 @@ void SelectCurrentUpgrade(upgrade *original)
     memset(listDependenciesString, 0, sizeof(listDependenciesString));
     for (int i = 0; i < MAX_DEPENDENCIES; ++i) {
         char *dep = original->dependencies[i];
-        if (!AreStrEquals(dep, "")) {
+        if (!IsEmpty(dep)) {
             AddDependency(dep);
         }
     }
-}
-
-void DrawInteract(Interact tr)
-{
-    if (tr.isOvered) {
-        DrawRectangleRec(tr.rect, LIGHTGRAY);
-    }
-    DrawRectangleLinesEx(tr.rect, 1, BLACK);
-    DrawText(tr.id, tr.rect.x + padding, tr.rect.y + padding/3, fontSize / 2, GRAY);
-    DrawText(tr.text, tr.rect.x + padding, tr.rect.y + padding * 2, fontSize, MAROON);
 }
 
 
@@ -342,12 +328,13 @@ void DrawStaticContent()
     DrawText("+", addUpgradeButton.x + padding, addUpgradeButton.y + padding * 0.33, fontSize, MAROON);
     DrawRectangleLinesEx(displayMainRect, 2, BLACK);
     int fieldsElem = (sizeof(editFieldsList) / sizeof(editFieldsList[0]));
-    for (i = 0; i < fieldsElem; ++i) DrawInteract(*editFieldsList[i]);
-    for (i = 0; i < amountSelectableUpgrades; ++i) DrawInteract(selectUpgradesList[i]);
+    for (i = 0; i < fieldsElem; ++i) DrawInteract(editFieldsList[i]);
+    for (i = 0; i < amountSelectableUpgrades; ++i) DrawInteract(&selectUpgradesList[i]);
 
 
-    DrawRectangleLinesEx(saveRect, 2, BLACK);
-    DrawText("Save", saveRect.x + padding, saveRect.y + padding, fontSize, MAROON);
+    // DrawRectangleLinesEx(saveRect, 2, BLACK);
+    // DrawText("Save", saveRect.x + padding, saveRect.y + padding, fontSize, MAROON);
+    DrawInteract(&saveButton);
     if (DropDownMenu.visible) {
         DrawDropDownMenu();
     }
@@ -401,7 +388,7 @@ void HandleMouseClick()
                 isAboutToSelect = true;
             }
         }
-        isAboutToSave= (CheckCollisionPointRec(mouse, saveRect));
+        isAboutToSave = (CheckCollisionPointRec(mouse, saveButton.rect));
         isAboutToAddNewUpgrade = (CheckCollisionPointRec(mouse, addUpgradeButton));
 
         if (CheckCollisionPointRec(mouse, scienceRect)) BuildSelectUpgradesList("science");
@@ -453,7 +440,7 @@ void HandleMouseClick()
                              editResourceInteract.rect.height);
         }
 
-        else if (CheckCollisionPointRec(mouse, saveRect) && isAboutToSave)
+        else if (CheckCollisionPointRec(mouse, saveButton.rect) && isAboutToSave)
         {
             SaveGame();
             isAboutToSave = false;
@@ -465,7 +452,7 @@ void HandleMouseClick()
             isAboutToRemoveDependency = true;
         }
         for (int i = 0; i < amountSelectableUpgrades; ++i) {
-            if (CheckCollisionPointRec(mouse, selectUpgradesList[i].rect)) {
+            if (selectUpgradesList[i].isHovered) {
                 isAboutToRemoveUpgrade = true;
             }
         }
@@ -487,10 +474,16 @@ void HandleMouseOver()
 {
     Vector2 mouse = GetMousePosition();
 
+    saveButton.isHovered = CheckCollisionPointRec(mouse, saveButton.rect);
     // Check left panel
-    for (int i = 0; i < numUpgrades; ++i) {
-        selectUpgradesList[i].isOvered = CheckCollisionPointRec(GetMousePosition(), selectUpgradesList[i].rect);
+    // for (int i = 0; i < numUpgrades; ++i) {
+    //     selectUpgradesList[i].isHovered = CheckCollisionPointRec(GetMousePosition(), selectUpgradesList[i].rect);
+    // }
+    for (int i = 0; i < amountSelectableUpgrades; ++i) {
+        selectUpgradesList[i].isHovered = CheckCollisionPointRec(GetMousePosition(), selectUpgradesList[i].rect);
     }
+    printf("Upgrade %s hovered: %d\n", selectUpgradesList[6].text, selectUpgradesList[6].isHovered);
+
 
     // Check editable fields
     for (int i = 0; i < (sizeof(editFieldsList) / sizeof(editFieldsList[0])); ++i) {
@@ -502,7 +495,7 @@ void HandleMouseOver()
                 AreStrEquals(editField.id, "description") ||
                 AreStrEquals(editField.id, "amount"))
             {
-                editField.isOvered = true;
+                editField.isHovered = true;
                 framesCounter++;
                 int cursorPos = strlen(editField.text);
                 int key = GetKeyPressed();
@@ -538,34 +531,26 @@ void HandleMouseOver()
         }
     }
 
-    if (CheckCollisionPointRec(mouse, saveRect)) {
-        DrawRectangleRec(saveRect, LIGHTGRAY);
-    }
-
     if (isDragging) {
         draggedUpdateSprite.rect.x = mouse.x;
         draggedUpdateSprite.rect.y = mouse.y;
-        DrawInteract(draggedUpdateSprite);
+        DrawInteract(&draggedUpdateSprite);
     }
 }
 
 
 void DrawConfigPanel(float panelWidth, float panelHeight)
 {
-    BuildSelectUpgradesList("structure");
-    SelectCurrentUpgrade(&state.upgrades_list[0]);
-    font = GetFontDefault();
-    while (!WindowShouldClose())
-    {
-        BeginDrawing();
-        {
-            ClearBackground(RAYWHITE);
-
-            HandleMouseClick();
-            HandleMouseOver(); // Must be before DrawStaticContent because it must draw underneath it
-            DrawStaticContent();
-        }
-        EndDrawing();
+    if (!initDone) {
+        BuildSelectUpgradesList("structure");
+        SelectCurrentUpgrade(&state.upgrades_list[0]);
+        font = GetFontDefault();
+        initDone = true;
     }
+
+    HandleMouseOver();
+    HandleMouseClick();
+    DrawStaticContent();
+
 
 }

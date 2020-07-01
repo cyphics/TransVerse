@@ -136,7 +136,7 @@ void DependencyToStr(char *ptr, char deps[MAX_DEPENDENCIES][30])
 {
     strcat(ptr, "<Dependencies>\n");
     for (int i = 0; i < MAX_DEPENDENCIES; i++) {
-        if (!AreStrEquals(deps[i], "") ) {
+        if (!IsEmpty(deps[i]) ) {
             strcat(ptr, "<Dependency>");
             strcat(ptr, deps[i]);
             strcat(ptr, "</Dependency>\n");

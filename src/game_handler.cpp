@@ -44,7 +44,7 @@ bool AreDependenciesMet(upgrade *up)
     bool result = true;
     for (int i = 0; i < MAX_DEPENDENCIES; i++) {
         char *dep_str = up->dependencies[i];
-        if (!AreStrEquals(dep_str, "")) {
+        if (!IsEmpty(dep_str)) {
             upgrade *dependency = GetUpgradeFromName(dep_str);
             if (dependency == NULL) {
                 printf("Error. Upgrade %s not found!\n", up->id);

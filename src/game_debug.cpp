@@ -56,7 +56,7 @@ void UpgradeToString(char* ptr, upgrade up)
         }
     }
     for (int i = 0; i < MAX_DEPENDENCIES; i++) {
-        if (!AreStrEquals(up.dependencies[i], "")) {
+        if (!IsEmpty(up.dependencies[i])) {
             strcat(deps_str, up.dependencies[i]);
             strcat(deps_str, "\n");
         }

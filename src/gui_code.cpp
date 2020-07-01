@@ -22,10 +22,13 @@ void TypeCode()
     char symbol;
     Font font = GetFontDefault();
     Rectangle codeContainer = { 25, 25, (float)screenWidth - 50, (float)screenHeight - 50};
-    int codeFontSize = 14;
+    int codeFontSize = 20;
     int codeFontPadding = 2;
     char buffer[200000];
-    FILE *fp = fopen("test.txt", "r");
+    FILE *fp = fopen("../assets/3dfirmware.txt", "r");
+    if (!fp) {
+        printf("Error, file not loaded\n");
+    }
     if (fp) {
         while ((symbol = getc(fp)) != EOF) {
             strcat(buffer, &symbol);
@@ -34,7 +37,7 @@ void TypeCode()
     }
 
     int codePosition = 0;
-    int textStep = 5;
+    int textStep = 1;
 
     //--------------------------------------------------------------------------------------
     // Main game loop

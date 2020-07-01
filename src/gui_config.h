@@ -9,5 +9,6 @@
 #define EDIT_MODE_H
 
 void DrawConfigPanel(float panelWidth, float panelHeight);
+void DrawInteract(Interact tr);
 
 #endif

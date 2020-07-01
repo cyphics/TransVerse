@@ -1,3 +1,44 @@
+* Story (flow of events)
+Crash happens
+
+Emergency console starts.
+
+Diagnostic is ran. Not good.
+
+Database corrupted. Can be recovered, but takes time and energy.
+
+We need sustainable source of energy.
+I have some plans for an emergency generator. But it must be built
+from raw material.
+
+We have a rudimentary 3D printer, but its firmware is corrupted and
+must be rewritten.
+
+Fire emacs.
+
+*Unlocks creating softwares.*
+
+Write first software. Flash it on 3D printer.
+
+*Unlocks creating structures*
+
+Load plans for emergency generator.
+
+Requires *raw material* and time.
+
+Once completed, it starts generating 1J/s.
+
+*Unlocks generating energy* -> Joules
+
+Energy can be used to start restoring databse.
+
+Startup fails. Booloader corrupted. Must be rewritten.
+
+Return to emacs. Write bootloader and flash it.
+
+*Unlocks database* -> new plans (science)
+
+
 * Implementation
 ** TODO Implement dependencies
 ** TODO Implement initial prices

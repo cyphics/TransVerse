@@ -2,28 +2,29 @@
 #include "game.cpp"
 #include "game_handler.cpp"
 #include "game_debug.cpp"
-#include "helper.cpp"
+#include "helper.h"
 #include "physics.cpp"
 #include "storage.cpp"
 
 extern char *CONFIG_FILE;
 
 typedef struct Button{
-    void *function;
-
+    void (*function)(char*);
 }Button;
 
-void Print()
+void Print(char *message)
 {
-    printf("Success!%s\n");
+    printf("Here's my message: %s\n", message);
 }
 int main(int argc, char *argv[])
 {
+
+    Button b{Print};
+    // (*b.function)("test");
 
     // CreateFirstXmlFile();
     if (LoadGame()) {
         SartGui();
     }
-    // Button b = {&Print};
 
 }
