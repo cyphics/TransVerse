@@ -4,6 +4,7 @@
    $Revision: $
    $Creator: Thierry Raeber$
    ======================================================================== */
+
 #include <raylib.h>
 #include <time.h>
 
@@ -29,9 +30,9 @@ float tabHeight = 30;
 
 
 Rectangle mainPanelRect = {interfaceAnchorX + padding, interfaceAnchorY + padding,
-                           800 - padding * 2, 600 - padding * 2};
+                           800 - padding * 2, 500 - padding * 2};
 Rectangle subPanelRect = {interfaceAnchorX + padding, interfaceAnchorY + padding + tabHeight + padding * 2,
-                          800 - padding * 2, 600 - padding * 2};
+                          800 - padding * 2, 560 - padding * 2};
 
 
 Interact terminalTab {"termTab", "",
@@ -44,15 +45,15 @@ Interact shipTab {"ship", "", (Rectangle){editorTab.rect.x + editorTab.rect.widt
                   "Ship", true};
 
 float availBoxWidth = 150;
-
+float availBoxHeight = 150;
 Rectangle availStruct = {subPanelRect.x + padding, subPanelRect.y + 30,
-                         availBoxWidth, 300};
+                         availBoxWidth, availBoxHeight};
 Rectangle availScience = {availStruct.x + availStruct.width + padding, availStruct.y,
-                          availBoxWidth, 300};
+                          availBoxWidth, availBoxHeight};
 Rectangle availSoft = {availScience.x + availScience.width + padding, availStruct.y,
-                       availBoxWidth, 300};
+                       availBoxWidth, availBoxHeight};
 Rectangle availIncrement = {availSoft.x + availSoft.width + padding, availStruct.y,
-                            availBoxWidth, 300};
+                            availBoxWidth, availBoxHeight};
 
 #define max_available_ugprade_per_type 5
 
@@ -92,7 +93,7 @@ void RefreshUpgradesLists()
             availStructInter[structCount] =
                 {"", "",
                  {availStruct.x + padding,
-                  availStruct.y + padding +  (textRectHeight + padding) * structCount,
+                  availStruct.y + padding +  (textRectHeight / 2 + padding) * structCount,
                   availStruct.width - 2 * padding, textRectHeight / 2},
                  availStructUpgrades[structCount].name, true, false};
             availStructInter[structCount].fontSize /= 2;
@@ -104,7 +105,7 @@ void RefreshUpgradesLists()
             availScienceInter[scienceCount] =
                 {"", "",
                  {availScience.x + padding,
-                  availScience.y + padding +  (textRectHeight + padding) * scienceCount,
+                  availScience.y + padding +  (textRectHeight / 2 + padding) * scienceCount,
                   availScience.width - 2 * padding, textRectHeight / 2},
                  availScienceUpgrades[scienceCount].name, true, false};
             availScienceInter[scienceCount].fontSize /= 2;
@@ -115,7 +116,7 @@ void RefreshUpgradesLists()
             availSoftInter[softCount] =
                 {"", "",
                  {availSoft.x + padding,
-                  availSoft.y + padding +  (textRectHeight + padding) * softCount,
+                  availSoft.y + padding +  (textRectHeight / 2 + padding) * softCount,
                   availSoft.width - 2 * padding, textRectHeight / 2},
                  availSoftUpgrades[softCount].name, true, false};
             availSoftInter[softCount].fontSize /= 2;
@@ -126,7 +127,7 @@ void RefreshUpgradesLists()
             availIncrementInter[incrementCount] =
                 {"", "",
                  {availIncrement.x + padding,
-                  availIncrement.y + padding +  (textRectHeight + padding) * incrementCount,
+                  availIncrement.y + padding +  (textRectHeight / 2 + padding) * incrementCount,
                   availIncrement.width - 2 * padding, textRectHeight / 2},
                  availIncrementUpgrades[incrementCount].name, true, false};
             availIncrementInter[incrementCount].fontSize /= 2;
@@ -145,6 +146,19 @@ void HandleMouseHoveredGame()
     terminalTab.isHovered = (CheckCollisionPointRec(mousePosition, terminalTab.rect));
     editorTab.isHovered = (CheckCollisionPointRec(mousePosition, editorTab.rect));
     shipTab.isHovered = (CheckCollisionPointRec(mousePosition, shipTab.rect));
+    for (int i = 0; i < structCount; ++i) {
+        availStructInter[i].isHovered = (CheckCollisionPointRec(mousePosition, availStructInter[i].rect));
+    }
+    for (int i = 0; i < scienceCount; ++i) {
+        availScienceInter[i].isHovered = (CheckCollisionPointRec(mousePosition, availScienceInter[i].rect));
+    }
+    for (int i = 0; i < softCount; ++i) {
+        availSoftInter[i].isHovered = (CheckCollisionPointRec(mousePosition, availSoftInter[i].rect));
+    }
+    for (int i = 0; i < incrementCount; ++i) {
+        availIncrementInter[i].isHovered = (CheckCollisionPointRec(mousePosition, availIncrementInter[i].rect));
+    }
+
 
 }
 void HandleMouseClickGame()

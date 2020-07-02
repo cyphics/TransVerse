@@ -5,14 +5,10 @@
 #include "helper.h"
 #include "physics.cpp"
 #include "storage.cpp"
-
-extern char *CONFIG_FILE;
-extern HandleList AvailableUpgrades;
+#include <stb/stb.h>
 
 int main(int argc, char *argv[])
 {
-
-    // (*b.function)("test");
 
     // CreateFirstXmlFile();
     if (LoadGame()) {
