@@ -8,32 +8,160 @@
 #include <time.h>
 
 #include "gui.h"
+#include "game.h"
+#include "game_handler.h"
 #include "helper.cpp"
 #include "gui_code.cpp"
 
+bool isGameGuiInit = false;
 float interfaceAnchorX = 800.0f;
 float interfaceAnchorY = 0;
 
-float isInit;
+extern GameState state;
+extern HandleList AvailableUpgrades;
+extern Vector2 mousePosition;
+extern bool mouseLeftPressed;
+extern float fontSize;
+
+int currentPanel = TERMINAL;
+
+float tabHeight = 30;
+
 
 Rectangle mainPanelRect = {interfaceAnchorX + padding, interfaceAnchorY + padding,
                            800 - padding * 2, 600 - padding * 2};
+Rectangle subPanelRect = {interfaceAnchorX + padding, interfaceAnchorY + padding + tabHeight + padding * 2,
+                          800 - padding * 2, 600 - padding * 2};
 
-Interact terminalButton {"termTab", "", (Rectangle){mainPanelRect.x + padding, mainPanelRect.y + padding, 100, 30},
-                         "Terminal"};
-Interact editorButton {"editor", "", (Rectangle){terminalButton.rect.x + terminalButton.rect.width + padding, mainPanelRect.y + padding, 100, 30},
-                       "Editor"};
+
+Interact terminalTab {"termTab", "",
+                      (Rectangle){mainPanelRect.x + padding, mainPanelRect.y + padding, 100, tabHeight},
+                      "Terminal", true};
+Interact editorTab {"editor", "", (Rectangle){terminalTab.rect.x + terminalTab.rect.width + padding, mainPanelRect.
+y + padding, 100, tabHeight},
+                    "Editor", true};
+Interact shipTab {"ship", "", (Rectangle){editorTab.rect.x + editorTab.rect.width + padding, mainPanelRect.y + padding, 100, tabHeight},
+                  "Ship", true};
+
+float availBoxWidth = 150;
+
+Rectangle availStruct = {subPanelRect.x + padding, subPanelRect.y + 30,
+                         availBoxWidth, 300};
+Rectangle availScience = {availStruct.x + availStruct.width + padding, availStruct.y,
+                          availBoxWidth, 300};
+Rectangle availSoft = {availScience.x + availScience.width + padding, availStruct.y,
+                       availBoxWidth, 300};
+Rectangle availIncrement = {availSoft.x + availSoft.width + padding, availStruct.y,
+                            availBoxWidth, 300};
+
+#define max_available_ugprade_per_type 5
+
+UpgradeInfo availStructUpgrades[max_available_ugprade_per_type];
+int structCount = 0;
+UpgradeInfo availScienceUpgrades[max_available_ugprade_per_type];
+int scienceCount = 0;
+UpgradeInfo availSoftUpgrades[max_available_ugprade_per_type];
+int softCount = 0;
+UpgradeInfo availIncrementUpgrades[max_available_ugprade_per_type];
+int incrementCount = 0;
+Interact availStructInter[max_available_ugprade_per_type] = {};
+Interact availScienceInter[max_available_ugprade_per_type] = {};
+Interact availSoftInter[max_available_ugprade_per_type] = {};
+Interact availIncrementInter[max_available_ugprade_per_type] = {};
+
+
+void RefreshUpgradesLists()
+{
+    structCount = 0;
+    scienceCount = 0;
+    softCount = 0;
+    incrementCount = 0;
+
+    UpdateAvailableUpgrades();
+    memset(availStructUpgrades, 0, sizeof(availStructUpgrades));
+    memset(availScienceUpgrades, 0, sizeof(availScienceUpgrades));
+    memset(availSoftUpgrades, 0, sizeof(availSoftUpgrades));
+    memset(availIncrementUpgrades, 0, sizeof(availIncrementUpgrades));
+
+    for (int i = 0; i < AvailableUpgrades.size; ++i) {
+        UPGRADE handle = AvailableUpgrades.list[i];
+        UpgradeInfo info = {0};
+        GetInfo(handle, &info);
+        if (AreStrEquals(info.type, "structure")) {
+            availStructUpgrades[structCount] = info;
+            availStructInter[structCount] =
+                {"", "",
+                 {availStruct.x + padding,
+                  availStruct.y + padding +  (textRectHeight + padding) * structCount,
+                  availStruct.width - 2 * padding, textRectHeight / 2},
+                 availStructUpgrades[structCount].name, true, false};
+            availStructInter[structCount].fontSize /= 2;
+            structCount++;
+        }
+        if (AreStrEquals(info.type, "science")) {
+            availScienceUpgrades[scienceCount] = info;
+            printf("Sicence: %s\n", info.name);
+            availScienceInter[scienceCount] =
+                {"", "",
+                 {availScience.x + padding,
+                  availScience.y + padding +  (textRectHeight + padding) * scienceCount,
+                  availScience.width - 2 * padding, textRectHeight / 2},
+                 availScienceUpgrades[scienceCount].name, true, false};
+            availScienceInter[scienceCount].fontSize /= 2;
+            scienceCount++;
+        }
+        if (AreStrEquals(info.type, "software")) {
+            availSoftUpgrades[softCount] = info;
+            availSoftInter[softCount] =
+                {"", "",
+                 {availSoft.x + padding,
+                  availSoft.y + padding +  (textRectHeight + padding) * softCount,
+                  availSoft.width - 2 * padding, textRectHeight / 2},
+                 availSoftUpgrades[softCount].name, true, false};
+            availSoftInter[softCount].fontSize /= 2;
+            softCount++;
+        }
+        if (AreStrEquals(info.type, "incremental")) {
+            availIncrementUpgrades[incrementCount] = info;
+            availIncrementInter[incrementCount] =
+                {"", "",
+                 {availIncrement.x + padding,
+                  availIncrement.y + padding +  (textRectHeight + padding) * incrementCount,
+                  availIncrement.width - 2 * padding, textRectHeight / 2},
+                 availIncrementUpgrades[incrementCount].name, true, false};
+            availIncrementInter[incrementCount].fontSize /= 2;
+            incrementCount++;
+        }
+    }
+
+
+}
+
 
 void HandleMouseHoveredGame()
 {
     int gesture = GetGestureDetected();
-    Vector2 mouse = GetMousePosition();
 
-    terminalButton.isHovered = (CheckCollisionPointRec(mouse, terminalButton.rect));
+    terminalTab.isHovered = (CheckCollisionPointRec(mousePosition, terminalTab.rect));
+    editorTab.isHovered = (CheckCollisionPointRec(mousePosition, editorTab.rect));
+    shipTab.isHovered = (CheckCollisionPointRec(mousePosition, shipTab.rect));
 
 }
 void HandleMouseClickGame()
 {
+    if (mouseLeftPressed) {
+        if (CheckCollisionPointRec(mousePosition, editorTab.rect)) {
+            ResizeEditor(interfaceAnchorX, interfaceAnchorY);
+            currentPanel = EDITOR;
+        }
+
+        if (CheckCollisionPointRec(mousePosition, terminalTab.rect)) {
+            currentPanel = TERMINAL;
+        }
+        if (CheckCollisionPointRec(mousePosition, shipTab.rect)) {
+            currentPanel = SHIP;
+        }
+    }
 
 
 }
@@ -42,29 +170,73 @@ void HandleMouseClickGame()
 
 void DrawEditor()
 {
+    TypeCode();
+}
+
+void DrawShip()
+{
 
 }
 
 void DrawTerminal()
 {
+    int i;
+    DrawText("Structure", availStruct.x + padding, availStruct.y - 10, fontSize / 2, DARKGRAY);
+    DrawRectangleLinesEx(availStruct, 1, BLACK);
+    for (i = 0; i < structCount; ++i) {
+        DrawInteract(&availStructInter[i]);
+    }
 
+    DrawText("Science", availScience.x + padding, availStruct.y - 10, fontSize / 2, DARKGRAY);
+    DrawRectangleLinesEx(availScience, 1, BLACK);
+    for (i = 0; i < scienceCount; ++i) {
+        DrawInteract(&availScienceInter[i]);
+    }
+    DrawText("Software", availSoft.x + padding, availStruct.y - 10, fontSize / 2, DARKGRAY);
+    DrawRectangleLinesEx(availSoft, 1, BLACK);
+    for (i = 0; i < softCount; ++i) {
+        DrawInteract(&availSoftInter[i]);
+    }
+    DrawText("Incremental", availIncrement.x + padding, availStruct.y - 10, fontSize / 2, DARKGRAY);
+    DrawRectangleLinesEx(availIncrement, 1, BLACK);
+    for (i = 0; i < incrementCount; ++i) {
+        DrawInteract(&availIncrementInter[i]);
+    }
 }
 
 
 void DrawStaticInterface()
 {
-    DrawRectangleLinesEx(mainPanelRect, 2, BLACK);
-    DrawInteract(&terminalButton);
-    DrawInteract(&editorButton);
+    DrawRectangleLinesEx(subPanelRect, 2, BLACK);
+    DrawInteract(&terminalTab);
+    DrawInteract(&editorTab);
+    DrawInteract(&shipTab);
+    switch (currentPanel) {
+    case TERMINAL: {
+        DrawTerminal();
+        break;
+    }
+    case EDITOR:{
+        DrawEditor();
+        break;
+    }
+    default:
+        break;
+    }
 }
 
 
 void DrawGame()
 {
+    if (!isGameGuiInit) {
+        RefreshUpgradesLists();
+        isGameGuiInit = true;
+    }
 
     HandleMouseHoveredGame();
     HandleMouseClickGame();
     DrawStaticInterface();
+
     // DrawAnimation();
     // TypeCode();
     // DrawConfigMenu();

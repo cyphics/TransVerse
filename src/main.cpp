@@ -7,24 +7,15 @@
 #include "storage.cpp"
 
 extern char *CONFIG_FILE;
+extern HandleList AvailableUpgrades;
 
-typedef struct Button{
-    void (*function)(char*);
-}Button;
-
-void Print(char *message)
-{
-    printf("Here's my message: %s\n", message);
-}
 int main(int argc, char *argv[])
 {
 
-    Button b{Print};
     // (*b.function)("test");
 
     // CreateFirstXmlFile();
     if (LoadGame()) {
         SartGui();
     }
-
 }

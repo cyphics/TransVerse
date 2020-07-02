@@ -13,21 +13,23 @@
 extern char *CONFIG_FILE;
 
 // extern GameState state;
+extern Vector2 mousePosition;
+extern int keyPressed;
 Font font;
+float fontSize = defaultFontSize;
 
 const int numUpgrades = MAX_UPGRADES_AMOUNT;
 
 // Common
 bool initDone = false;
 float scaleFactor = 1;
-int framesCounter = 0;
 float maxUpgradeNameLength = 250 * scaleFactor;
 float padding = 5 * scaleFactor;
-float fontSize = 20.0 * scaleFactor;
 float xAnchor = 20 * scaleFactor, yAnchor = 20 * scaleFactor;
 float textRectHeight = 30 * scaleFactor;
 char currentUpgradeIncreaseString[6];
 char currentUpgradeAmountString[10];
+char currentUpgradeBoughtString[10];
 bool mouseOnText = false;
 
 bool isDragging = false;
@@ -94,22 +96,26 @@ Rectangle displayResourceRect = {displayTypeRect.x,
 Rectangle displayAmountRect = {displayIncreaseRect.x,
                                displayDependRect.y,
                                displayIncreaseRect.width, textRectHeight};
+Rectangle displayBoughtRect = {displayResourceRect.x,
+                               displayDependRect.y + displayDependRect.height + padding * 2,
+                               50, displayNameRect.height};
 float displayMainRectWidth = displayNameRect.width + displayTypeRect.width + displayIncreaseRect.width + 4 * padding;
 float displayMainRectHeight = 300.0f * scaleFactor;
 Rectangle displayMainRect = {displayRectXAnchor, displayRectYAnchor,
                              displayMainRectWidth, displayMainRectHeight};
 Rectangle saveRect = {displayRectXAnchor, displayRectYAnchor + displayMainRectWidth + padding,
                       100, 30};
-Interact saveButton = {"saveBtn", "", saveRect,"Save"};
+Interact saveButton = {"saveBtn", "", saveRect,"Save", true, false};
 bool isAboutToSave = false;
 
-Interact editNameInteract = {"name", "name", displayNameRect};
-Interact editTypeInteract = {"type", "type", displayTypeRect};
-Interact editIncreaseInteract = {"increase", "increase", displayIncreaseRect};
-Interact editDescInteract = {"description", "description", displayDescRect};
-Interact editDependenciesInteract = {"dependencies", "dependencies", displayDependRect};
-Interact editResourceInteract = {"resource", "resource", displayResourceRect};
-Interact editAmountInteract = {"amount", "amount", displayAmountRect};
+Interact editNameInteract = {"name", "name", displayNameRect, "", false, true};
+Interact editTypeInteract = {"type", "type", displayTypeRect, "", false, false};
+Interact editIncreaseInteract = {"increase", "increase", displayIncreaseRect, "", false, true};
+Interact editDescInteract = {"description", "description", displayDescRect, "", false, true};
+Interact editDependenciesInteract = {"dependencies", "dependencies", displayDependRect, "", false, false};
+Interact editResourceInteract = {"resource", "resource", displayResourceRect, "", false, false};
+Interact editAmountInteract = {"amount", "amount", displayAmountRect, "", false, true};
+Interact editBoughtInteract = {"bought", "bought", displayBoughtRect, "", false, true};
 
 char dependenciesStringToDisplay[MAX_DEPENDENCIES * 35];
 
@@ -128,7 +134,8 @@ Interact *editFieldsList[] = { &editNameInteract,
                                &editDependenciesInteract,
                                &editResourceInteract,
                                &editResourceInteract,
-                               &editAmountInteract};
+                               &editAmountInteract,
+                               &editBoughtInteract};
 
 char dropDownMenuResult[30] = {};
 char *typesList[] = {"science", "incremental", "knowledge", "structure", "software"};
@@ -150,11 +157,12 @@ void BuildSelectUpgradesList(char *newTypeList)
     memset(selectUpgradesList, 0, sizeof(selectUpgradesList));
     for (int i = 0; i < numUpgrades; ++i) {
         if (AreStrEquals(state.upgrades_list[i].type, currentTypeList)) {
-            selectUpgradesList[amountSelectableUpgrades] = {"", "",
-                                                            {xAnchor + padding,
-                                                             yAnchor + padding +  (textRectHeight + padding) * amountSelectableUpgrades,
-                                                             selectUpgradeRectWidth, textRectHeight},
-                                                            state.upgrades_list[i].id};
+            selectUpgradesList[amountSelectableUpgrades]
+                = {"", "",
+                   {xAnchor + padding,
+                    yAnchor + padding +  (textRectHeight + padding) * amountSelectableUpgrades,
+                    selectUpgradeRectWidth, textRectHeight},
+                   state.upgrades_list[i].id, true, false};
             amountSelectableUpgrades++;
         }
     }
@@ -189,10 +197,10 @@ void AddDependency(char *dependency)
     GenerateDependencyListString();
 }
 
-void RemoveDependency(Vector2 mouse)
+void RemoveDependency()
 {
-    // int item_idx = (mouse.y - DropDownMenu.rect.y) / textRectHeight;
-    int dep_to_remove_idx = (mouse.y - editDependenciesInteract.rect.y ) / (textRectHeight + padding);
+    // int item_idx = (mousePosition.y - DropDownMenu.rect.y) / textRectHeight;
+    int dep_to_remove_idx = (mousePosition.y - editDependenciesInteract.rect.y ) / (textRectHeight + padding);
     printf("Removing dependency %s, idx %d\n", listDependenciesString[dep_to_remove_idx], dep_to_remove_idx);
 
     for (int i = dep_to_remove_idx; i < numberDependencies; ++i) {
@@ -219,7 +227,7 @@ void AddNewUpgrade()
     BuildSelectUpgradesList(currentTypeList);
 }
 
-void RemoveUpgrade(Vector2 mouse)
+void RemoveUpgrade()
 {
     int selectUpIdx = 0;
     for (int i = 0; i < numUpgrades; ++i) {
@@ -240,7 +248,7 @@ void AddResource(resource res)
 
 }
 
-void RemoveResource(Vector2 mouse)
+void RemoveResource()
 {
 
 }
@@ -264,9 +272,9 @@ void OpenDropDownMenu(char *target, char **items_list, int num_items, float anch
     DropDownMenu.visible = true;
 }
 
-void CloseDropDownMenu(Vector2 mouse)
+void CloseDropDownMenu()
 {
-    int item_idx = (mouse.y - DropDownMenu.rect.y) / textRectHeight;
+    int item_idx = (mousePosition.y - DropDownMenu.rect.y) / textRectHeight;
     memset(DropDownMenu.destination, 0, sizeof(currentUpgradeToEdit->type));
     memcpy(DropDownMenu.destination,
            DropDownMenu.items_list[item_idx],
@@ -278,12 +286,14 @@ void SelectCurrentUpgrade(upgrade *original)
     currentUpgradeToEdit = original;
     sprintf(currentUpgradeIncreaseString, "%.2f", currentUpgradeToEdit->increase_factor);
     sprintf(currentUpgradeAmountString, "%d", currentUpgradeToEdit->initial_price.resources[0].amount);
+    sprintf(currentUpgradeBoughtString, "%d", currentUpgradeToEdit->amount_bought);
     editNameInteract.text = original->id;
     editTypeInteract.text = original->type;
     editDescInteract.text = original->description;
     editResourceInteract.text = original->initial_price.resources[0].type;
     editAmountInteract.text = currentUpgradeAmountString;
     editIncreaseInteract.text = currentUpgradeIncreaseString;
+    editBoughtInteract.text = currentUpgradeBoughtString;
     editDependenciesInteract.text = "";
     numberDependencies = 0;
     memset(listDependenciesString, 0, sizeof(listDependenciesString));
@@ -302,7 +312,7 @@ void DrawDropDownMenu()
     for (int i = 0; i < DropDownMenu.num_items; ++i) {
         Rectangle r = {DropDownMenu.rect.x, DropDownMenu.rect.y + 30 * i,
                        DropDownMenu.rect.width, textRectHeight};
-        if (CheckCollisionPointRec(GetMousePosition(), r)) c = WHITE;
+        if (CheckCollisionPointRec(mousePosition, r)) c = WHITE;
         else c = LIGHTGRAY;
         DrawRectangleRec(r, c);
         DrawText(DropDownMenu.items_list[i],
@@ -332,8 +342,6 @@ void DrawStaticContent()
     for (i = 0; i < amountSelectableUpgrades; ++i) DrawInteract(&selectUpgradesList[i]);
 
 
-    // DrawRectangleLinesEx(saveRect, 2, BLACK);
-    // DrawText("Save", saveRect.x + padding, saveRect.y + padding, fontSize, MAROON);
     DrawInteract(&saveButton);
     if (DropDownMenu.visible) {
         DrawDropDownMenu();
@@ -349,11 +357,10 @@ void HandleMouseClick()
     */
 
     int gesture = GetGestureDetected();
-    Vector2 mouse = GetMousePosition();
 
     if (isDragging && IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
         // Check if dropped in dependency list
-        if (CheckCollisionPointRec(mouse, editDependenciesInteract.rect)) {
+        if (CheckCollisionPointRec(mousePosition, editDependenciesInteract.rect)) {
             AddDependency(dragedUpgrade->id);
         }
         isDragging = false;
@@ -371,7 +378,7 @@ void HandleMouseClick()
         if (!isDragging) {
             for (int i = 0; i < numUpgrades; ++i) {
                 Rectangle rec = selectUpgradesList[i].rect;
-                if (CheckCollisionPointRec(mouse, rec)) {
+                if (CheckCollisionPointRec(mousePosition, rec)) {
                     isDragging = true;
                     dragedUpgrade = &state.upgrades_list[i];
                     draggedUpdateSprite.text = dragedUpgrade->id;
@@ -384,17 +391,17 @@ void HandleMouseClick()
         // Prepare actions that will be triggered on release
         for (int i = 0; i < numUpgrades; ++i) {
             Rectangle rec = selectUpgradesList[i].rect;
-            if (CheckCollisionPointRec(mouse, rec)) {
+            if (CheckCollisionPointRec(mousePosition, rec)) {
                 isAboutToSelect = true;
             }
         }
-        isAboutToSave = (CheckCollisionPointRec(mouse, saveButton.rect));
-        isAboutToAddNewUpgrade = (CheckCollisionPointRec(mouse, addUpgradeButton));
+        isAboutToSave = (CheckCollisionPointRec(mousePosition, saveButton.rect));
+        isAboutToAddNewUpgrade = (CheckCollisionPointRec(mousePosition, addUpgradeButton));
 
-        if (CheckCollisionPointRec(mouse, scienceRect)) BuildSelectUpgradesList("science");
-        if (CheckCollisionPointRec(mouse, structureRect)) BuildSelectUpgradesList("structure");
-        if (CheckCollisionPointRec(mouse, softwareRect)) BuildSelectUpgradesList("software");
-        if (CheckCollisionPointRec(mouse, incrementalRect)) BuildSelectUpgradesList("incremental");
+        if (CheckCollisionPointRec(mousePosition, scienceRect)) BuildSelectUpgradesList("science");
+        if (CheckCollisionPointRec(mousePosition, structureRect)) BuildSelectUpgradesList("structure");
+        if (CheckCollisionPointRec(mousePosition, softwareRect)) BuildSelectUpgradesList("software");
+        if (CheckCollisionPointRec(mousePosition, incrementalRect)) BuildSelectUpgradesList("incremental");
     }
     if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
 
@@ -402,7 +409,7 @@ void HandleMouseClick()
         if (isAboutToSelect) {
             for (int i = 0; i < amountSelectableUpgrades; ++i) {
                 Rectangle rec = selectUpgradesList[i].rect;
-                if (CheckCollisionPointRec(mouse, rec)) {
+                if (CheckCollisionPointRec(mousePosition, rec)) {
                     for (int j = 0; j < numUpgrades; ++j) {
                         if (AreStrEquals(selectUpgradesList[i].text, state.upgrades_list[j].id)) {
                             SelectCurrentUpgrade(&state.upgrades_list[j]);
@@ -416,31 +423,31 @@ void HandleMouseClick()
             isAboutToSelect = false;
         }
 
-        if (isAboutToAddNewUpgrade && CheckCollisionPointRec(mouse, addUpgradeButton)) {
+        if (isAboutToAddNewUpgrade && CheckCollisionPointRec(mousePosition, addUpgradeButton)) {
             AddNewUpgrade();
 
         }
 
         // Select DropDownMenu item and close
         if (DropDownMenu.visible &&
-            CheckCollisionPointRec(mouse, DropDownMenu.rect)) {
-            CloseDropDownMenu(mouse);
+            CheckCollisionPointRec(mousePosition, DropDownMenu.rect)) {
+            CloseDropDownMenu();
         }
         DropDownMenu.visible = false;
 
-        if (CheckCollisionPointRec(mouse, editTypeInteract.rect)){
+        if (CheckCollisionPointRec(mousePosition, editTypeInteract.rect)){
             OpenDropDownMenu(editTypeInteract.text, typesList,
                              sizeof(typesList) / sizeof(typesList[0]),
                              editTypeInteract.rect.x, editTypeInteract.rect.y +
                              editTypeInteract.rect.height);
-        } else if (CheckCollisionPointRec(mouse, editResourceInteract.rect)){
+        } else if (CheckCollisionPointRec(mousePosition, editResourceInteract.rect)){
             OpenDropDownMenu(editResourceInteract.text, resourcesList,
                              sizeof(resourcesList) / sizeof(resourcesList[0]),
                              editResourceInteract.rect.x, editResourceInteract.rect.y +
                              editResourceInteract.rect.height);
         }
 
-        else if (CheckCollisionPointRec(mouse, saveButton.rect) && isAboutToSave)
+        else if (CheckCollisionPointRec(mousePosition, saveButton.rect) && isAboutToSave)
         {
             SaveGame();
             isAboutToSave = false;
@@ -448,7 +455,7 @@ void HandleMouseClick()
     }
 
     if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)) {
-        if (CheckCollisionPointRec(mouse, editDependenciesInteract.rect)) {
+        if (CheckCollisionPointRec(mousePosition, editDependenciesInteract.rect)) {
             isAboutToRemoveDependency = true;
         }
         for (int i = 0; i < amountSelectableUpgrades; ++i) {
@@ -460,11 +467,11 @@ void HandleMouseClick()
     }
     if (IsMouseButtonReleased(MOUSE_RIGHT_BUTTON)){
         if (isAboutToRemoveDependency){
-            RemoveDependency(mouse);
+            RemoveDependency();
             isAboutToRemoveDependency = false;
         }
         if (isAboutToRemoveUpgrade) {
-            RemoveUpgrade(mouse);
+            RemoveUpgrade();
         }
     }
 
@@ -472,74 +479,69 @@ void HandleMouseClick()
 
 void HandleMouseOver()
 {
-    Vector2 mouse = GetMousePosition();
+    saveButton.isHovered = CheckCollisionPointRec(mousePosition, saveButton.rect);
 
-    saveButton.isHovered = CheckCollisionPointRec(mouse, saveButton.rect);
-    // Check left panel
-    // for (int i = 0; i < numUpgrades; ++i) {
-    //     selectUpgradesList[i].isHovered = CheckCollisionPointRec(GetMousePosition(), selectUpgradesList[i].rect);
-    // }
-    for (int i = 0; i < amountSelectableUpgrades; ++i) {
+    int i;
+    for (i = 0; i < amountSelectableUpgrades; ++i) {
         selectUpgradesList[i].isHovered = CheckCollisionPointRec(GetMousePosition(), selectUpgradesList[i].rect);
     }
-    printf("Upgrade %s hovered: %d\n", selectUpgradesList[6].text, selectUpgradesList[6].isHovered);
 
-
-    // Check editable fields
-    for (int i = 0; i < (sizeof(editFieldsList) / sizeof(editFieldsList[0])); ++i) {
-        Interact editField = *editFieldsList[i];
-        if (CheckCollisionPointRec(mouse, editField.rect))
+    for (i = 0; i < (sizeof(editFieldsList) / sizeof(editFieldsList[0])); ++i) {
+        Interact *editField = editFieldsList[i];
+        editField->isHovered = CheckCollisionPointRec(mousePosition, editField->rect);
+        if (editField->isHoverable)
         {
-            if (AreStrEquals(editField.id, "name") ||
-                AreStrEquals(editField.id, "increase") ||
-                AreStrEquals(editField.id, "description") ||
-                AreStrEquals(editField.id, "amount"))
+            if (AreStrEquals(editField->id, "name") ||
+                AreStrEquals(editField->id, "increase") ||
+                AreStrEquals(editField->id, "description") ||
+                AreStrEquals(editField->id, "bought") ||
+                AreStrEquals(editField->id, "amount"))
             {
-                editField.isHovered = true;
-                framesCounter++;
-                int cursorPos = strlen(editField.text);
-                int key = GetKeyPressed();
-                if (((framesCounter/20)%2) == 0)
-                    DrawText("_", editField.rect.x + 6 + MeasureText(editField.text, fontSize),
-                             editField.rect.y + 8, fontSize, MAROON);
-                if (framesCounter > 200) framesCounter = 0;
+
+                int cursorPos = strlen(editField->text);
                 if (IsKeyPressed(KEY_BACKSPACE)) {
                     if (cursorPos > 0) {
-                        editField.text[cursorPos - 1] = '\0';
+                        editField->text[cursorPos - 1] = '\0';
                     }
                 }
-                while(key > 0){
-                    if (AreStrEquals(editField.id, "increase")) {
-                        if ((key >= 46) && (key <= 57)) {
-                            editField.text[cursorPos] = (char)key;
-                            editField.text[cursorPos + 1] = '\0';
+                while(keyPressed > 0){
+                    if (AreStrEquals(editField->id, "increase")) {
+                        if ((keyPressed >= 46) && (keyPressed <= 57)) {
+                            editField->text[cursorPos] = (char)keyPressed;
+                            editField->text[cursorPos + 1] = '\0';
                             currentUpgradeToEdit->increase_factor = atof(editIncreaseInteract.text);
                         }
-                    } else if (AreStrEquals(editField.id, "amount")) {
-                        if ((key >= 48) && (key <= 57)) {
-                            editField.text[cursorPos] = (char)key;
-                            editField.text[cursorPos + 1] = '\0';
+                    } else if (AreStrEquals(editField->id, "amount")) {
+                        if ((keyPressed >= 48) && (keyPressed <= 57)) {
+                            editField->text[cursorPos] = (char)keyPressed;
+                            editField->text[cursorPos + 1] = '\0';
                             currentUpgradeToEdit->initial_price.resources[0].amount = strtol(editAmountInteract.text, NULL, 10);
                         }
-                    }else if ((key >= 32) && (key <= 125)) {
-                        editField.text[cursorPos] = (char)key;
-                        editField.text[cursorPos + 1] = '\0';
+                    } else if (AreStrEquals(editField->id, "bought")) {
+                        if ((keyPressed >= 48) && (keyPressed <= 57)) {
+                            editField->text[cursorPos] = (char)keyPressed;
+                            editField->text[cursorPos + 1] = '\0';
+                            currentUpgradeToEdit->amount_bought = strtol(editBoughtInteract.text, NULL, 10);
+                        }
+                    }else if ((keyPressed >= 32) && (keyPressed <= 125)) {
+                        editField->text[cursorPos] = (char)keyPressed;
+                        editField->text[cursorPos + 1] = '\0';
                     }
-                    key = GetKeyPressed();
+                    keyPressed = GetKeyPressed();
                 }
             }
         }
     }
 
     if (isDragging) {
-        draggedUpdateSprite.rect.x = mouse.x;
-        draggedUpdateSprite.rect.y = mouse.y;
+        draggedUpdateSprite.rect.x = mousePosition.x;
+        draggedUpdateSprite.rect.y = mousePosition.y;
         DrawInteract(&draggedUpdateSprite);
     }
 }
 
 
-void DrawConfigPanel(float panelWidth, float panelHeight)
+void DrawConfigPanel()
 {
     if (!initDone) {
         BuildSelectUpgradesList("structure");

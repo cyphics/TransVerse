@@ -7,11 +7,15 @@
 
 #include "storage.h"
 #include "game_debug.h"
+#include "game_handler.h"
 
 extern GameState state;
 extern char *CONFIG_FILE;
-UPGRADE available_upgrades[MAX_UPGRADES_AMOUNT] = {};
-UPGRADE affordable_upgrades[MAX_UPGRADES_AMOUNT] = {};
+// UPGRADE available_upgrades[MAX_UPGRADES_AMOUNT] = {};
+// UPGRADE affordable_upgrades[MAX_UPGRADES_AMOUNT] = {};
+
+
+HandleList AvailableUpgrades;
 
 upgrade *GetUpgradeFromName(char *name)
 {
@@ -73,25 +77,15 @@ void UpdateAffordableUpgrades()
 void UpdateAvailableUpgrades()
 {
     // Return list of all upgrades with satisfied dependencies
-
     // NOTE(cyphics) : This method is ran after every purchase
 
+    AvailableUpgrades.size = 0;
     for (int i = 0; i < MAX_UPGRADES_AMOUNT; i++) {
         upgrade *up = &state.upgrades_list[i];
-        if (IsEmpty(up->id) || !(IsBuyable(up) && AreDependenciesMet(up)))
-            available_upgrades[i] = NULL;
-        else available_upgrades[i] = up;
+        if (!IsEmpty(up->id) && IsBuyable(up) && AreDependenciesMet(up)){
+            AvailableUpgrades.list[AvailableUpgrades.size++] = up;
+        }
     }
-
-
-    // for (int i = 0; i < MAX_UPGRADES_AMOUNT; i++) {
-    //     UPGRADE cur_handle = available_upgrades[i];
-    //     if (cur_handle != NULL) {
-    //         UpgradeInfo up_info = GetInfo(cur_handle);
-    //         PrintUpgradeInfo(up_info);
-    //     }
-    // }
-
 }
 
 bool PurchaseUpgrade(UPGRADE handle, int amount)
@@ -105,19 +99,17 @@ bool PurchaseUpgrade(UPGRADE handle, int amount)
     return true;
 }
 
-UpgradeInfo GetInfo(UPGRADE handle)
+void GetInfo(UPGRADE handle, UpgradeInfo *info)
 {
-    UpgradeInfo info;
-    if (handle != NULL) {
+    if (handle)  {
         upgrade *up = (upgrade*)handle;
-        memcpy(info.name, up->id, sizeof(up->id));
-        memcpy(info.desc, up->description, sizeof(up->description));
-        memcpy(info.type, up->type, sizeof(up->type));
-        info.amount_bought = up->amount_bought;
-        info.increase_factor = up->increase_factor;
+        memcpy(info->name, up->id, sizeof(up->id));
+        memcpy(info->desc, up->description, sizeof(up->description));
+        memcpy(info->type, up->type, sizeof(up->type));
+        info->amount_bought = up->amount_bought;
+        info->increase_factor = up->increase_factor;
+        info->handle = handle;
     }
-
-    return info;
 }
 
 bool LoadGame()

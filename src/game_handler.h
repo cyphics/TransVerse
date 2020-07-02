@@ -22,12 +22,19 @@ typedef struct UpgradeInfo
     u_time time_until_available;
     int amount_bought;
     char **dependencies[MAX_DEPENDENCIES][30];
+    void *handle;
 } UpgradeInfo;
+
+typedef struct HandleList
+{
+    void* list[MAX_UPGRADES_AMOUNT];
+    int size;
+} HandleList;
 
 void UpdateAffordableUpgrades();
 void UpdateAvailableUpgrades();
 bool PurchaseUpgrade(UPGRADE handle, int amount = 1);
-UpgradeInfo GetInfo(UPGRADE handle);
+void GetInfo(UPGRADE handle, UpgradeInfo *info);
 bool LoadGame();
 void SaveGame();
 
