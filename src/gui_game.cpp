@@ -24,7 +24,7 @@ extern Vector2 mousePosition;
 extern bool mouseLeftPressed;
 extern float fontSize;
 
-int currentPanel = TERMINAL;
+int currentPanel = EDITOR_TAB;
 
 float tabHeight = 30;
 
@@ -39,20 +39,25 @@ Interact terminalTab {"termTab", "",
                       (Rectangle){mainPanelRect.x + padding, mainPanelRect.y + padding, 100, tabHeight},
                       "Terminal", true};
 Interact editorTab {"editor", "", (Rectangle){terminalTab.rect.x + terminalTab.rect.width + padding, mainPanelRect.
-y + padding, 100, tabHeight},
+                                              y + padding, 100, tabHeight},
                     "Editor", true};
 Interact shipTab {"ship", "", (Rectangle){editorTab.rect.x + editorTab.rect.width + padding, mainPanelRect.y + padding, 100, tabHeight},
                   "Ship", true};
+Interact workshopTab {"workshop", "", (Rectangle){shipTab.rect.x + shipTab.rect.width + padding, mainPanelRect.y + padding, 120, tabHeight},
+                      "Workshop", true};
 
 float availBoxWidth = 150;
 float availBoxHeight = 150;
-Rectangle availStruct = {subPanelRect.x + padding, subPanelRect.y + 30,
+
+Rectangle availUpgradesRect = {subPanelRect.x + padding, subPanelRect.y + 30,
                          availBoxWidth, availBoxHeight};
-Rectangle availScience = {availStruct.x + availStruct.width + padding, availStruct.y,
+Rectangle availStruct = {availUpgradesRect.x, availUpgradesRect.y,
+                         availBoxWidth, availBoxHeight};
+Rectangle availScience = {availUpgradesRect.x, availUpgradesRect.y,
                           availBoxWidth, availBoxHeight};
-Rectangle availSoft = {availScience.x + availScience.width + padding, availStruct.y,
+Rectangle availSoft = {availUpgradesRect.x, availUpgradesRect.y,
                        availBoxWidth, availBoxHeight};
-Rectangle availIncrement = {availSoft.x + availSoft.width + padding, availStruct.y,
+Rectangle availIncrement = {availUpgradesRect.x, availUpgradesRect.y,
                             availBoxWidth, availBoxHeight};
 
 #define max_available_ugprade_per_type 5
@@ -92,9 +97,9 @@ void RefreshUpgradesLists()
             availStructUpgrades[structCount] = info;
             availStructInter[structCount] =
                 {"", "",
-                 {availStruct.x + padding,
-                  availStruct.y + padding +  (textRectHeight / 2 + padding) * structCount,
-                  availStruct.width - 2 * padding, textRectHeight / 2},
+                 {availUpgradesRect.x + padding,
+                  availUpgradesRect.y + padding +  (textRectHeight / 2 + padding) * structCount,
+                  availUpgradesRect.width - 2 * padding, textRectHeight / 2},
                  availStructUpgrades[structCount].name, true, false};
             availStructInter[structCount].fontSize /= 2;
             structCount++;
@@ -146,6 +151,7 @@ void HandleMouseHoveredGame()
     terminalTab.isHovered = (CheckCollisionPointRec(mousePosition, terminalTab.rect));
     editorTab.isHovered = (CheckCollisionPointRec(mousePosition, editorTab.rect));
     shipTab.isHovered = (CheckCollisionPointRec(mousePosition, shipTab.rect));
+    workshopTab.isHovered = (CheckCollisionPointRec(mousePosition, workshopTab.rect));
     for (int i = 0; i < structCount; ++i) {
         availStructInter[i].isHovered = (CheckCollisionPointRec(mousePosition, availStructInter[i].rect));
     }
@@ -165,15 +171,18 @@ void HandleMouseClickGame()
 {
     if (mouseLeftPressed) {
         if (CheckCollisionPointRec(mousePosition, editorTab.rect)) {
-            ResizeEditor(interfaceAnchorX, interfaceAnchorY);
-            currentPanel = EDITOR;
+            ResizeEditor(availUpgradesRect.x + availUpgradesRect.width + padding * 4, availUpgradesRect.y);
+            currentPanel = EDITOR_TAB;
         }
 
         if (CheckCollisionPointRec(mousePosition, terminalTab.rect)) {
-            currentPanel = TERMINAL;
+            currentPanel = TERMINAL_TAB;
         }
         if (CheckCollisionPointRec(mousePosition, shipTab.rect)) {
-            currentPanel = SHIP;
+            currentPanel = SHIP_TAB;
+        }
+        if (CheckCollisionPointRec(mousePosition, workshopTab.rect)) {
+            currentPanel = WORKSHOP_TAB;
         }
     }
 
@@ -184,38 +193,41 @@ void HandleMouseClickGame()
 
 void DrawEditor()
 {
+    DrawText("Available softwares", availSoft.x + padding, availStruct.y - 10, fontSize / 2, DARKGRAY);
+    DrawRectangleLinesEx(availSoft, 1, BLACK);
+    for (int i = 0; i < softCount; ++i) {
+        DrawInteract(&availSoftInter[i]);
+    }
     TypeCode();
 }
 
 void DrawShip()
 {
+    DrawText("Incremental", availIncrement.x + padding, availStruct.y - 10, fontSize / 2, DARKGRAY);
+    DrawRectangleLinesEx(availIncrement, 1, BLACK);
+    for (int i = 0; i < incrementCount; ++i) {
+        DrawInteract(&availIncrementInter[i]);
+    }
+}
 
+void DrawWorkshop()
+{
+    DrawText("Structure", availStruct.x + padding, availStruct.y - 10, fontSize / 2, DARKGRAY);
+    DrawRectangleLinesEx(availStruct, 1, BLACK);
+    for (int i = 0; i < structCount; ++i) {
+        DrawInteract(&availStructInter[i]);
+    }
 }
 
 void DrawTerminal()
 {
-    int i;
-    DrawText("Structure", availStruct.x + padding, availStruct.y - 10, fontSize / 2, DARKGRAY);
-    DrawRectangleLinesEx(availStruct, 1, BLACK);
-    for (i = 0; i < structCount; ++i) {
-        DrawInteract(&availStructInter[i]);
-    }
-
     DrawText("Science", availScience.x + padding, availStruct.y - 10, fontSize / 2, DARKGRAY);
     DrawRectangleLinesEx(availScience, 1, BLACK);
-    for (i = 0; i < scienceCount; ++i) {
+    for (int i = 0; i < scienceCount; ++i) {
         DrawInteract(&availScienceInter[i]);
     }
-    DrawText("Software", availSoft.x + padding, availStruct.y - 10, fontSize / 2, DARKGRAY);
-    DrawRectangleLinesEx(availSoft, 1, BLACK);
-    for (i = 0; i < softCount; ++i) {
-        DrawInteract(&availSoftInter[i]);
-    }
-    DrawText("Incremental", availIncrement.x + padding, availStruct.y - 10, fontSize / 2, DARKGRAY);
-    DrawRectangleLinesEx(availIncrement, 1, BLACK);
-    for (i = 0; i < incrementCount; ++i) {
-        DrawInteract(&availIncrementInter[i]);
-    }
+
+
 }
 
 
@@ -225,15 +237,25 @@ void DrawStaticInterface()
     DrawInteract(&terminalTab);
     DrawInteract(&editorTab);
     DrawInteract(&shipTab);
+    DrawInteract(&workshopTab);
     switch (currentPanel) {
-    case TERMINAL: {
+    case TERMINAL_TAB: {
         DrawTerminal();
         break;
     }
-    case EDITOR:{
+    case EDITOR_TAB:{
         DrawEditor();
         break;
     }
+    case WORKSHOP_TAB:{
+        DrawWorkshop();
+        break;
+    }
+    case SHIP_TAB:{
+        DrawShip();
+        break;
+    }
+
     default:
         break;
     }
@@ -243,6 +265,7 @@ void DrawStaticInterface()
 void DrawGame()
 {
     if (!isGameGuiInit) {
+        ResizeEditor(availUpgradesRect.x + availUpgradesRect.width + padding * 4, availUpgradesRect.y);
         RefreshUpgradesLists();
         isGameGuiInit = true;
     }

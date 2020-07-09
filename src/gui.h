@@ -11,22 +11,23 @@
 const float defaultFontSize = 20.0;
 
 enum Panel{
-    TERMINAL,
-    EDITOR,
-    SHIP
+    TERMINAL_TAB,
+    EDITOR_TAB,
+    SHIP_TAB,
+    WORKSHOP_TAB
 };
 
-struct Interact {
+typedef struct Interact {
     char *id;
     char *title;
     Rectangle rect;
     char *text;
     bool isHoverable;
     bool isEditable;
-    int hoverIdx = 0;
-    bool isHovered = false;
-    float fontSize = defaultFontSize;
-};
+    int hoverIdx;
+    bool isHovered;
+    float fontSize;
+} Interact;
 
 void DrawInteract(Interact *tr);
 // void SartGui();

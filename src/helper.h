@@ -9,9 +9,9 @@
 
 typedef struct Timer
 {
-    int start = 0;
-    int duration = 0; // in frames
-    int elapsed = 0;
+    int start;
+    int duration; // in frames
+    int elapsed;
 } Timer;
 
 

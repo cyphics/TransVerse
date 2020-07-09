@@ -33,7 +33,7 @@ typedef struct HandleList
 
 void UpdateAffordableUpgrades();
 void UpdateAvailableUpgrades();
-bool PurchaseUpgrade(UPGRADE handle, int amount = 1);
+bool PurchaseUpgrade(UPGRADE handle, int amount);
 void GetInfo(UPGRADE handle, UpgradeInfo *info);
 bool LoadGame();
 void SaveGame();

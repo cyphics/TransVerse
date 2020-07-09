@@ -117,6 +117,7 @@ Interact editResourceInteract = {"resource", "resource", displayResourceRect, ""
 Interact editAmountInteract = {"amount", "amount", displayAmountRect, "", false, true};
 Interact editBoughtInteract = {"bought", "bought", displayBoughtRect, "", false, true};
 
+
 char dependenciesStringToDisplay[MAX_DEPENDENCIES * 35];
 
 char listDependenciesString[MAX_DEPENDENCIES][30];
@@ -138,8 +139,8 @@ Interact *editFieldsList[] = { &editNameInteract,
                                &editBoughtInteract};
 
 char dropDownMenuResult[30] = {};
-char *typesList[] = {"science", "incremental", "knowledge", "structure", "software"};
-char *resourcesList[] = {"energy", "code", "knowledge", "software", "copper", "steel"};
+char *typesList[] = {"science", "incremental", "structure", "software"};
+char *resourcesList[] = {"energy", "code", "software", "copper", "steel"};
 
 struct DropDownMenu {
     char *destination;
@@ -414,10 +415,7 @@ void HandleMouseClick()
                         if (AreStrEquals(selectUpgradesList[i].text, state.upgrades_list[j].id)) {
                             SelectCurrentUpgrade(&state.upgrades_list[j]);
                         }
-
                     }
-
-
                 }
             }
             isAboutToSelect = false;
@@ -425,7 +423,6 @@ void HandleMouseClick()
 
         if (isAboutToAddNewUpgrade && CheckCollisionPointRec(mousePosition, addUpgradeButton)) {
             AddNewUpgrade();
-
         }
 
         // Select DropDownMenu item and close
@@ -489,46 +486,38 @@ void HandleMouseOver()
     for (i = 0; i < (sizeof(editFieldsList) / sizeof(editFieldsList[0])); ++i) {
         Interact *editField = editFieldsList[i];
         editField->isHovered = CheckCollisionPointRec(mousePosition, editField->rect);
-        if (editField->isHoverable)
+        if (editField->isHovered && editField->isEditable)
         {
-            if (AreStrEquals(editField->id, "name") ||
-                AreStrEquals(editField->id, "increase") ||
-                AreStrEquals(editField->id, "description") ||
-                AreStrEquals(editField->id, "bought") ||
-                AreStrEquals(editField->id, "amount"))
-            {
-
-                int cursorPos = strlen(editField->text);
-                if (IsKeyPressed(KEY_BACKSPACE)) {
-                    if (cursorPos > 0) {
-                        editField->text[cursorPos - 1] = '\0';
-                    }
+            int cursorPos = strlen(editField->text);
+            if (IsKeyPressed(KEY_BACKSPACE)) {
+                if (cursorPos > 0) {
+                    editField->text[cursorPos - 1] = '\0';
                 }
-                while(keyPressed > 0){
-                    if (AreStrEquals(editField->id, "increase")) {
-                        if ((keyPressed >= 46) && (keyPressed <= 57)) {
-                            editField->text[cursorPos] = (char)keyPressed;
-                            editField->text[cursorPos + 1] = '\0';
-                            currentUpgradeToEdit->increase_factor = atof(editIncreaseInteract.text);
-                        }
-                    } else if (AreStrEquals(editField->id, "amount")) {
-                        if ((keyPressed >= 48) && (keyPressed <= 57)) {
-                            editField->text[cursorPos] = (char)keyPressed;
-                            editField->text[cursorPos + 1] = '\0';
-                            currentUpgradeToEdit->initial_price.resources[0].amount = strtol(editAmountInteract.text, NULL, 10);
-                        }
-                    } else if (AreStrEquals(editField->id, "bought")) {
-                        if ((keyPressed >= 48) && (keyPressed <= 57)) {
-                            editField->text[cursorPos] = (char)keyPressed;
-                            editField->text[cursorPos + 1] = '\0';
-                            currentUpgradeToEdit->amount_bought = strtol(editBoughtInteract.text, NULL, 10);
-                        }
-                    }else if ((keyPressed >= 32) && (keyPressed <= 125)) {
+            }
+            while(keyPressed > 0){
+                if (AreStrEquals(editField->id, "increase")) {
+                    if ((keyPressed >= 46) && (keyPressed <= 57)) {
                         editField->text[cursorPos] = (char)keyPressed;
                         editField->text[cursorPos + 1] = '\0';
+                        currentUpgradeToEdit->increase_factor = atof(editIncreaseInteract.text);
                     }
-                    keyPressed = GetKeyPressed();
+                } else if (AreStrEquals(editField->id, "amount")) {
+                    if ((keyPressed >= 48) && (keyPressed <= 57)) {
+                        editField->text[cursorPos] = (char)keyPressed;
+                        editField->text[cursorPos + 1] = '\0';
+                        currentUpgradeToEdit->initial_price.resources[0].amount = strtol(editAmountInteract.text, NULL, 10);
+                    }
+                } else if (AreStrEquals(editField->id, "bought")) {
+                    if ((keyPressed >= 48) && (keyPressed <= 57)) {
+                        editField->text[cursorPos] = (char)keyPressed;
+                        editField->text[cursorPos + 1] = '\0';
+                        currentUpgradeToEdit->amount_bought = strtol(editBoughtInteract.text, NULL, 10);
+                    }
+                }else if ((keyPressed >= 32) && (keyPressed <= 125)) {
+                    editField->text[cursorPos] = (char)keyPressed;
+                    editField->text[cursorPos + 1] = '\0';
                 }
+                keyPressed = GetKeyPressed();
             }
         }
     }

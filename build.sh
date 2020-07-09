@@ -7,7 +7,7 @@ ctags -e -R .
 
 build()
 {
-    if gcc -g -Wno-write-strings \
+    if gcc -x c -g -Wno-write-strings \
           -o build/TransVerse \
           -lm -lraylib \
           src/main.cpp -Ilib/stb/

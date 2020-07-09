@@ -3,8 +3,11 @@ Crash happens
 
 Emergency console starts.
 
-Diagnostic is ran. Not good.
+Not enough energy to run anything. Enables heat generator.
 
+/user pressed on screen to generate heat -> energy/
+
+Diagnostic is ran. Not good.
 Database corrupted. Can be recovered, but takes time and energy.
 
 We need sustainable source of energy.
@@ -40,5 +43,7 @@ Return to emacs. Write bootloader and flash it.
 
 
 * Implementation
-** TODO Implement dependencies
-** TODO Implement initial prices
+** DONE Implement dependencies
+   CLOSED: [2020-07-03 Fri 15:30]
+** DONE Implement initial prices
+   CLOSED: [2020-07-03 Fri 15:30]

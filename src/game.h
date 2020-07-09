@@ -17,11 +17,11 @@
 
 typedef void* UPGRADE;
 
-struct resource
+typedef struct resource
 {
     char type[15];
     int amount;
-};
+} resource;
 
 typedef struct price { resource resources[MAX_RESOURCES_PER_PRICE]; } price;
 
@@ -34,6 +34,8 @@ typedef struct upgrade
     float  increase_factor;
     int amount_bought;
     char dependencies[MAX_DEPENDENCIES][30];
+    char filename[50]; // software file
+    int amount_typed; // software
 } upgrade;
 
 typedef struct GameState{
