@@ -44,6 +44,6 @@ typedef struct GameState{
 } GameState;
 
 GameState state; // Original one
-GameState BuildGameConfig(upgrade up_list[], int number_upgrades, resource res_list[], int number_resources);
+GameState BuildGameConfig(const upgrade up_list[], int number_upgrades, const resource res_list[], int number_resources);
 
 #endif

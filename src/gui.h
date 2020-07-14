@@ -17,7 +17,7 @@ enum Panel{
     WORKSHOP_TAB
 };
 
-typedef struct Interact {
+typedef struct Interact{
     char *id;
     char *title;
     Rectangle rect;

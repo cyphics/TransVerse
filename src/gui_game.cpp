@@ -15,50 +15,39 @@
 #include "gui_code.cpp"
 
 bool isGameGuiInit = false;
-float interfaceAnchorX = 800.0f;
-float interfaceAnchorY = 0;
+const float interfaceAnchorX = 800.0f;
+const float interfaceAnchorY = 0;
 
 extern GameState state;
 extern HandleList AvailableUpgrades;
 extern Vector2 mousePosition;
 extern bool mouseLeftPressed;
-extern float fontSize;
+extern const float fontSize;
+extern const float padding;
 
 int currentPanel = EDITOR_TAB;
 
-float tabHeight = 30;
+const float tabHeight = 30;
 
 
-Rectangle mainPanelRect = {interfaceAnchorX + padding, interfaceAnchorY + padding,
-                           800 - padding * 2, 500 - padding * 2};
-Rectangle subPanelRect = {interfaceAnchorX + padding, interfaceAnchorY + padding + tabHeight + padding * 2,
-                          800 - padding * 2, 560 - padding * 2};
+const Rectangle mainPanelRect = {interfaceAnchorX + padding, interfaceAnchorY + padding,
+                                 800 - padding * 2, 500 - padding * 2};
+const Rectangle subPanelRect = {interfaceAnchorX + padding, interfaceAnchorY + padding + tabHeight + padding * 2,
+                                800 - padding * 2, 560 - padding * 2};
 
+Interact terminalTab;
+Interact editorTab;
+Interact shipTab;
+Interact workshopTab;
 
-Interact terminalTab {"termTab", "",
-                      (Rectangle){mainPanelRect.x + padding, mainPanelRect.y + padding, 100, tabHeight},
-                      "Terminal", true};
-Interact editorTab {"editor", "", (Rectangle){terminalTab.rect.x + terminalTab.rect.width + padding, mainPanelRect.
-                                              y + padding, 100, tabHeight},
-                    "Editor", true};
-Interact shipTab {"ship", "", (Rectangle){editorTab.rect.x + editorTab.rect.width + padding, mainPanelRect.y + padding, 100, tabHeight},
-                  "Ship", true};
-Interact workshopTab {"workshop", "", (Rectangle){shipTab.rect.x + shipTab.rect.width + padding, mainPanelRect.y + padding, 120, tabHeight},
-                      "Workshop", true};
+const float availBoxWidth = 150;
+const float availBoxHeight = 150;
 
-float availBoxWidth = 150;
-float availBoxHeight = 150;
-
-Rectangle availUpgradesRect = {subPanelRect.x + padding, subPanelRect.y + 30,
-                         availBoxWidth, availBoxHeight};
-Rectangle availStruct = {availUpgradesRect.x, availUpgradesRect.y,
-                         availBoxWidth, availBoxHeight};
-Rectangle availScience = {availUpgradesRect.x, availUpgradesRect.y,
-                          availBoxWidth, availBoxHeight};
-Rectangle availSoft = {availUpgradesRect.x, availUpgradesRect.y,
-                       availBoxWidth, availBoxHeight};
-Rectangle availIncrement = {availUpgradesRect.x, availUpgradesRect.y,
-                            availBoxWidth, availBoxHeight};
+Rectangle availUpgradesRect;
+Rectangle availStruct;
+Rectangle availScience;
+Rectangle availSoft;
+Rectangle availIncrement;
 
 #define max_available_ugprade_per_type 5
 
@@ -75,7 +64,6 @@ Interact availScienceInter[max_available_ugprade_per_type] = {};
 Interact availSoftInter[max_available_ugprade_per_type] = {};
 Interact availIncrementInter[max_available_ugprade_per_type] = {};
 
-
 void RefreshUpgradesLists()
 {
     structCount = 0;
@@ -88,54 +76,68 @@ void RefreshUpgradesLists()
     memset(availScienceUpgrades, 0, sizeof(availScienceUpgrades));
     memset(availSoftUpgrades, 0, sizeof(availSoftUpgrades));
     memset(availIncrementUpgrades, 0, sizeof(availIncrementUpgrades));
-
+    Interact inter;
+    Rectangle r;
     for (int i = 0; i < AvailableUpgrades.size; ++i) {
         UPGRADE handle = AvailableUpgrades.list[i];
         UpgradeInfo info = {0};
         GetInfo(handle, &info);
         if (AreStrEquals(info.type, "structure")) {
             availStructUpgrades[structCount] = info;
-            availStructInter[structCount] =
-                {"", "",
-                 {availUpgradesRect.x + padding,
-                  availUpgradesRect.y + padding +  (textRectHeight / 2 + padding) * structCount,
-                  availUpgradesRect.width - 2 * padding, textRectHeight / 2},
-                 availStructUpgrades[structCount].name, true, false};
-            availStructInter[structCount].fontSize /= 2;
+            r = (Rectangle){availUpgradesRect.x + padding,
+                            availUpgradesRect.y + padding +  (textRectHeight / 2 + padding) * structCount,
+                            availUpgradesRect.width - 2 * padding,
+                            textRectHeight / 2};
+            inter = (Interact){};
+            inter.rect = r;
+            inter.text = availStructUpgrades[structCount].name;
+            inter.isHoverable = true;
+            inter.isEditable = false;
+            inter.fontSize = fontSize / 2;
+            availStructInter[structCount] = inter;
             structCount++;
         }
         if (AreStrEquals(info.type, "science")) {
             availScienceUpgrades[scienceCount] = info;
-            printf("Sicence: %s\n", info.name);
-            availScienceInter[scienceCount] =
-                {"", "",
-                 {availScience.x + padding,
-                  availScience.y + padding +  (textRectHeight / 2 + padding) * scienceCount,
-                  availScience.width - 2 * padding, textRectHeight / 2},
-                 availScienceUpgrades[scienceCount].name, true, false};
-            availScienceInter[scienceCount].fontSize /= 2;
+            printf("Science: %s\n", info.name);
+            r = (Rectangle){availScience.x + padding,
+                            availScience.y + padding +  (textRectHeight / 2 + padding) * scienceCount,
+                            availScience.width - 2 * padding,
+                            textRectHeight / 2};
+            inter = (Interact){};
+            inter.rect = r;
+            inter.text = availScienceUpgrades[scienceCount].name;
+            inter.isHoverable = true;
+            inter.isEditable = false;
+            inter.fontSize = fontSize / 2;
+            availScienceInter[scienceCount] = inter;
             scienceCount++;
         }
         if (AreStrEquals(info.type, "software")) {
             availSoftUpgrades[softCount] = info;
-            availSoftInter[softCount] =
-                {"", "",
-                 {availSoft.x + padding,
-                  availSoft.y + padding +  (textRectHeight / 2 + padding) * softCount,
-                  availSoft.width - 2 * padding, textRectHeight / 2},
-                 availSoftUpgrades[softCount].name, true, false};
-            availSoftInter[softCount].fontSize /= 2;
+            Rectangle r = (Rectangle){availSoft.x + padding,
+                                      availSoft.y + padding +  (textRectHeight / 2 + padding) * softCount,
+                                      availSoft.width - 2 * padding, textRectHeight / 2};
+            inter = (Interact){};
+            inter.rect = r;
+            inter.text = availSoftUpgrades[softCount].name;
+            inter.isHoverable = true;
+            inter.isEditable = false;
+            inter.fontSize = fontSize / 2;
+            availSoftInter[softCount] = inter;
             softCount++;
         }
         if (AreStrEquals(info.type, "incremental")) {
             availIncrementUpgrades[incrementCount] = info;
-            availIncrementInter[incrementCount] =
-                {"", "",
-                 {availIncrement.x + padding,
-                  availIncrement.y + padding +  (textRectHeight / 2 + padding) * incrementCount,
-                  availIncrement.width - 2 * padding, textRectHeight / 2},
-                 availIncrementUpgrades[incrementCount].name, true, false};
-            availIncrementInter[incrementCount].fontSize /= 2;
+            Rectangle r = (Rectangle){availIncrement.x + padding,
+                                      availIncrement.y + padding +  (textRectHeight / 2 + padding) * incrementCount,
+                                      availIncrement.width - 2 * padding, textRectHeight / 2};
+            inter = (Interact){};
+            inter.text = availIncrementUpgrades[incrementCount].name;
+            inter.isHoverable = true;
+            inter.isEditable = false;
+            inter.fontSize = fontSize / 2;
+            availIncrementInter[incrementCount] = inter;
             incrementCount++;
         }
     }
@@ -261,13 +263,45 @@ void DrawStaticInterface()
     }
 }
 
+void InitGameUI()
+{
+    Rectangle terminalRect = {mainPanelRect.x + padding,
+                              mainPanelRect.y + padding,
+                              100, tabHeight};
+    terminalTab = (Interact){"termTab", "", terminalRect, "Terminal", true};
+    Rectangle editorRect = {terminalTab.rect.x + terminalTab.rect.width + padding,
+                            mainPanelRect.y + padding,
+                            100, tabHeight};
+    editorTab = (Interact){"editor", "", editorRect, "Editor", true};
+    Rectangle shipRect = {editorTab.rect.x + editorTab.rect.width + padding,
+                          mainPanelRect.y + padding,
+                          100, tabHeight};
+    shipTab = (Interact){"ship", "", shipRect, "Ship", true};
+    Rectangle workshopRect = {shipTab.rect.x + shipTab.rect.width + padding,
+                              mainPanelRect.y + padding,
+                              120, tabHeight};
+    workshopTab = (Interact){"workshop", "", workshopRect, "Workshop", true};
 
+    availUpgradesRect = (Rectangle){subPanelRect.x + padding, subPanelRect.y + 30,
+                                   availBoxWidth, availBoxHeight};
+    availStruct = (Rectangle){availUpgradesRect.x, availUpgradesRect.y,
+                             availBoxWidth, availBoxHeight};
+    availScience = (Rectangle){availUpgradesRect.x, availUpgradesRect.y,
+                              availBoxWidth, availBoxHeight};
+    availSoft = (Rectangle){availUpgradesRect.x, availUpgradesRect.y,
+                           availBoxWidth, availBoxHeight};
+    availIncrement = (Rectangle){availUpgradesRect.x, availUpgradesRect.y,
+                                availBoxWidth, availBoxHeight};
+
+
+    ResizeEditor(availUpgradesRect.x + availUpgradesRect.width + padding * 4, availUpgradesRect.y);
+    RefreshUpgradesLists();
+    isGameGuiInit = true;
+}
 void DrawGame()
 {
     if (!isGameGuiInit) {
-        ResizeEditor(availUpgradesRect.x + availUpgradesRect.width + padding * 4, availUpgradesRect.y);
-        RefreshUpgradesLists();
-        isGameGuiInit = true;
+        InitGameUI();
     }
 
     HandleMouseHoveredGame();
