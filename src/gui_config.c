@@ -5,6 +5,8 @@
    $Creator: Thierry Raeber$
    ======================================================================== */
 #include <raylib.h>
+#define RAYGUI_IMPLEMENTATION
+#include "../lib/raygui/raygui.h"
 
 #include "helper.h"
 #include "game_handler.h"
@@ -22,7 +24,7 @@ const float fontSize = defaultFontSize * scaleFactor;
 #define numUpgrades  MAX_UPGRADES_AMOUNT
 const float maxUpgradeNameLength = 250 * scaleFactor;
 const float padding = 5 * scaleFactor;
-const float xAnchor = 20 * scaleFactor, yAnchor = 20 * scaleFactor;
+const float anchorX = 20 * scaleFactor, anchorY = 20 * scaleFactor;
 const float textRectHeight = 30 * scaleFactor;
 
 // Common
@@ -46,26 +48,26 @@ const float selectMainRectWidth = selectUpgradeRectWidth + 2 * padding;
 const float selectMainRectHeight = textRectHeight * numUpgrades + padding * (numUpgrades + 1);
 const float tabWidth = selectMainRectWidth / 4;
 
-Rectangle structureRect = {xAnchor,
-                           yAnchor - textRectHeight/2,
+Rectangle structureRect = {anchorX,
+                           anchorY - textRectHeight/2,
                            tabWidth,
                            textRectHeight/2};
-Rectangle scienceRect = {xAnchor + tabWidth,
-                         yAnchor - textRectHeight/2,
+Rectangle scienceRect = {anchorX + tabWidth,
+                         anchorY - textRectHeight/2,
                          tabWidth,
-                         textRectHeight/2};Rectangle softwareRect = {xAnchor + tabWidth * 2,
-                                                                     yAnchor - textRectHeight/2,
+                         textRectHeight/2};Rectangle softwareRect = {anchorX + tabWidth * 2,
+                                                                     anchorY - textRectHeight/2,
                                                                      tabWidth,
                                                                      textRectHeight/2};
-Rectangle incrementalRect = {xAnchor + tabWidth * 3,
-                             yAnchor - textRectHeight/2,
+Rectangle incrementalRect = {anchorX + tabWidth * 3,
+                             anchorY - textRectHeight/2,
                              tabWidth, textRectHeight/2};
 
-Rectangle selectMainRect = {xAnchor, yAnchor,
-                                  selectMainRectWidth, selectMainRectHeight};
+Rectangle selectMainRect = {anchorX, anchorY,
+                            selectMainRectWidth, selectMainRectHeight};
 
 const float addButtonWidth = 20;
-Rectangle addUpgradeButton = {xAnchor, 0,
+Rectangle addUpgradeButton = {anchorX, 0,
                               addButtonWidth, addButtonWidth};
 bool isAboutToAddNewUpgrade = false;
 bool isAboutToRemoveUpgrade = false;
@@ -78,8 +80,8 @@ bool isAboutToSelect = false;
 // Upgrade edit panel
 upgrade *currentUpgradeToEdit;
 
-const float displayRectXAnchor = xAnchor + maxUpgradeNameLength + 20 * scaleFactor;
-const float displayRectYAnchor = yAnchor;
+const float displayRectXAnchor = anchorX + maxUpgradeNameLength + 20 * scaleFactor;
+const float displayRectYAnchor = anchorY;
 const Rectangle displayNameRect = {displayRectXAnchor + padding,
                                    displayRectYAnchor + padding,
                                    selectMainRectWidth, textRectHeight};
@@ -103,12 +105,8 @@ const Rectangle displayBoughtRect = {displayResourceRect.x,
                                      50, displayNameRect.height};
 const float displayMainRectWidth = displayNameRect.width + displayTypeRect.width + displayIncreaseRect.width + 4 * padding;
 const float displayMainRectHeight = 300.0f * scaleFactor;
-Rectangle displayMainRect = {displayRectXAnchor, displayRectYAnchor,
-                             displayMainRectWidth, displayMainRectHeight};
-const Rectangle saveRect = {displayRectXAnchor, displayRectYAnchor + displayMainRectWidth + padding,
-                            100, 30};
-Interact saveButton = {"saveBtn", "", saveRect,"Save", true, false};
-bool isAboutToSave = false;
+const Rectangle displayMainRect = {displayRectXAnchor, displayRectYAnchor,
+                                   displayMainRectWidth, displayMainRectHeight};
 
 Interact editNameInteract = {"name", "name", displayNameRect, "", false, true};
 Interact editTypeInteract = {"type", "type", displayTypeRect, "", false, false};
@@ -130,6 +128,26 @@ bool isAboutToRemoveDependency = false;
 // int numberResources = 0;
 // bool isAboutToRemoveResource = false;
 
+
+char dropDownMenuResult[30] = {};
+char *typesList[] = {"science", "incremental", "structure", "software"};
+char *resourcesList[] = {"energy", "code", "software", "copper", "steel"};
+
+const Rectangle gameStateRectangle = {anchorX, displayMainRect.y + displayMainRect.height + padding,
+                                      selectMainRectWidth + displayMainRectWidth + padding * 2, 200
+};
+
+const Rectangle speedRect = {gameStateRectangle.x + padding,
+                             gameStateRectangle.y + padding,
+                             60 * scaleFactor,
+                             textRectHeight};
+Interact speedInteract = {"speed", "Speed", speedRect, "", false, true, .fontSize = defaultFontSize};
+
+const float saveWidth = 100;
+const Rectangle saveRect = {gameStateRectangle.x + gameStateRectangle.width - saveWidth,
+                            gameStateRectangle.y + gameStateRectangle.height + padding,
+                            saveWidth, 30};
+
 Interact *editFieldsList[] = { &editNameInteract,
                                &editTypeInteract,
                                &editIncreaseInteract,
@@ -139,10 +157,6 @@ Interact *editFieldsList[] = { &editNameInteract,
                                &editResourceInteract,
                                &editAmountInteract,
                                &editBoughtInteract};
-
-char dropDownMenuResult[30] = {};
-char *typesList[] = {"science", "incremental", "structure", "software"};
-char *resourcesList[] = {"energy", "code", "software", "copper", "steel"};
 
 struct DropDownMenu {
     char *destination;
@@ -160,8 +174,8 @@ void BuildSelectUpgradesList(char *newTypeList)
     memset(selectUpgradesList, 0, sizeof(selectUpgradesList));
     for (int i = 0; i < numUpgrades; ++i) {
         if (AreStrEquals(state.upgrades_list[i].type, currentTypeList)) {
-            Rectangle r = {xAnchor + padding,
-                           yAnchor + padding +  (textRectHeight + padding) * amountSelectableUpgrades,
+            Rectangle r = {anchorX + padding,
+                           anchorY + padding +  (textRectHeight + padding) * amountSelectableUpgrades,
                            selectUpgradeRectWidth, textRectHeight};
 
             Interact inter = {};
@@ -169,8 +183,9 @@ void BuildSelectUpgradesList(char *newTypeList)
             inter.text = state.upgrades_list[i].id;
             inter.isHoverable = true;
             inter.isEditable = false;
+            inter.fontSize = defaultFontSize;
             selectUpgradesList[amountSelectableUpgrades] = inter;
-                amountSelectableUpgrades++;
+            amountSelectableUpgrades++;
         }
     }
     selectMainRect.height = (textRectHeight + padding) * amountSelectableUpgrades + 2 * padding;
@@ -329,33 +344,62 @@ void DrawDropDownMenu()
     DrawRectangleLinesEx(DropDownMenu.rect, 1, DARKGRAY);
 }
 
+
+void DrawGameState()
+{
+    char speedStr[20];
+    sprintf(speedStr, "%d", state.current_speed);
+    speedInteract.text = speedStr;
+    // DrawInteract(&speedInteract);
+    DrawRectangleLinesEx(gameStateRectangle, 2, BLACK);
+
+    char elapsedTime[20];
+    sprintf(elapsedTime, "Elapsed time: %.1f", state.elapsed_time);
+}
+
 void DrawStaticContent()
 {
     int i;
-    DrawRectangleLinesEx(scienceRect, 1, BLACK);
-    DrawRectangleLinesEx(structureRect, 1, BLACK);
-    DrawRectangleLinesEx(softwareRect, 1, BLACK);
-    DrawRectangleLinesEx(incrementalRect, 1, BLACK);
-    DrawText("science", scienceRect.x + padding, scienceRect.y + padding / 2, fontSize/4, DARKGRAY);
-    DrawText("structure", structureRect.x + padding, structureRect.y + padding / 2, fontSize/4, DARKGRAY);
-    DrawText("software", softwareRect.x + padding, softwareRect.y + padding / 2, fontSize/4, DARKGRAY);
-    DrawText("incremental", incrementalRect.x + padding, incrementalRect.y + padding / 2, fontSize/4, DARKGRAY);
-    DrawRectangleLinesEx(selectMainRect, 2, BLACK);
+
     DrawRectangleLinesEx(addUpgradeButton, 2, BLACK);
     DrawText("+", addUpgradeButton.x + padding, addUpgradeButton.y + padding * 0.33, fontSize, MAROON);
-    DrawRectangleLinesEx(displayMainRect, 2, BLACK);
+    DrawGameState();
     int fieldsElem = (sizeof(editFieldsList) / sizeof(editFieldsList[0]));
     for (i = 0; i < fieldsElem; ++i) DrawInteract(editFieldsList[i]);
     for (i = 0; i < amountSelectableUpgrades; ++i) DrawInteract(&selectUpgradesList[i]);
-
-    char elapsedTime[100];
-    sprintf(elapsedTime, "Elapsed time: %.1f", state.elapsed_time);
-    DrawText(elapsedTime, saveRect.x, saveRect.y + saveRect.height + padding, fontSize / 4, DARKGRAY);
-
-    DrawInteract(&saveButton);
     if (DropDownMenu.visible) {
         DrawDropDownMenu();
     }
+
+    GuiGroupBox(selectMainRect, "Upgrades");
+    GuiGroupBox(displayMainRect, "Edit upgrade");
+    GuiLabel(speedRect, "Speed");
+
+    int style = GuiGetStyle(SCROLLBAR, BORDER_WIDTH);
+    style = GuiCheckBox((Rectangle){ 565, 280, 20, 20 }, "ARROWS_VISIBLE", GuiGetStyle(SCROLLBAR, ARROWS_VISIBLE));
+    GuiSetStyle(SCROLLBAR, ARROWS_VISIBLE, style);
+
+
+    if (GuiButton(scienceRect, "Science")) {
+        BuildSelectUpgradesList("science");
+    }
+
+    if (GuiButton(incrementalRect, "Incremental")) {
+        BuildSelectUpgradesList("incremental");
+    }
+
+    if (GuiButton(structureRect, "Structure")) {
+        BuildSelectUpgradesList("structure");
+    }
+
+    if (GuiButton(softwareRect, "Software")) {
+        BuildSelectUpgradesList("software");
+    }
+
+    if (GuiButton(saveRect, "Save")) {
+        SaveGame();
+    };
+
 }
 
 void HandleMouseClick()
@@ -380,7 +424,6 @@ void HandleMouseClick()
     if (gesture == GESTURE_DRAG) {
         // Cancel pending actions
         isAboutToSelect = false;
-        isAboutToSave = false;
         isAboutToRemoveDependency = false;
         isAboutToAddNewUpgrade = false;
 
@@ -405,13 +448,7 @@ void HandleMouseClick()
                 isAboutToSelect = true;
             }
         }
-        isAboutToSave = (CheckCollisionPointRec(mousePosition, saveButton.rect));
         isAboutToAddNewUpgrade = (CheckCollisionPointRec(mousePosition, addUpgradeButton));
-
-        if (CheckCollisionPointRec(mousePosition, scienceRect)) BuildSelectUpgradesList("science");
-        if (CheckCollisionPointRec(mousePosition, structureRect)) BuildSelectUpgradesList("structure");
-        if (CheckCollisionPointRec(mousePosition, softwareRect)) BuildSelectUpgradesList("software");
-        if (CheckCollisionPointRec(mousePosition, incrementalRect)) BuildSelectUpgradesList("incremental");
     }
     if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
 
@@ -452,12 +489,6 @@ void HandleMouseClick()
                              editResourceInteract.rect.x, editResourceInteract.rect.y +
                              editResourceInteract.rect.height);
         }
-
-        else if (CheckCollisionPointRec(mousePosition, saveButton.rect) && isAboutToSave)
-        {
-            SaveGame();
-            isAboutToSave = false;
-        }
     }
 
     if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)) {
@@ -480,12 +511,10 @@ void HandleMouseClick()
             RemoveUpgrade();
         }
     }
-
 }
 
 void HandleMouseOver()
 {
-    saveButton.isHovered = CheckCollisionPointRec(mousePosition, saveButton.rect);
 
     int i;
     for (i = 0; i < amountSelectableUpgrades; ++i) {
@@ -517,7 +546,7 @@ void HandleMouseOver()
                         currentUpgradeToEdit->initial_price.resources[0].amount = strtol(editAmountInteract.text, NULL, 10);
                     }
                 } else if (AreStrEquals(editField->id, "bought")) {
-                    if ((keyPressed >= 48) && (keyPressed <= 57)) {
+ if ((keyPressed >= 48) && (keyPressed <= 57)) {
                         editField->text[cursorPos] = (char)keyPressed;
                         editField->text[cursorPos + 1] = '\0';
                         currentUpgradeToEdit->amount_bought = strtol(editBoughtInteract.text, NULL, 10);
@@ -546,6 +575,9 @@ void DrawConfigPanel()
         SelectCurrentUpgrade(&state.upgrades_list[0]);
         font = GetFontDefault();
         initDone = true;
+        for (int i = 0; i < sizeof(editFieldsList) / sizeof(editFieldsList[0]); ++i) {
+            editFieldsList[i]->fontSize = defaultFontSize;
+        }
     }
 
     HandleMouseOver();

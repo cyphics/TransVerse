@@ -8,6 +8,7 @@
 #include <stb/stb.h>
 
 #include "gui_config.c"
+#include "gui_config_2.c"
 #include "gui_game.c"
 
 const int screenWidth = 1600;
@@ -56,6 +57,7 @@ void SartGui()
 
             ClearBackground(RAYWHITE);
             DrawLineEx((Vector2){800, 0}, (Vector2){800, 600}, 1, LIGHTGRAY);
+            DrawRayGui();
             DrawConfigPanel();
             DrawGame();
         }
@@ -109,13 +111,6 @@ void DrawHoverAnimLayer(Interact *i)
     }
 
 }
-
-// void RescaleInteract(Interact *i, float scale)
-// {
-//     i->rect.height *= scale;
-//     i->rect.width *= scale;
-//     i->fontSize *= scale;
-// }
 
 void DrawInteract(Interact *i)
 {
