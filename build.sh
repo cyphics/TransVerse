@@ -10,7 +10,7 @@ build()
     if gcc -x c -g -Wno-write-strings \
           -o build/TransVerse \
           -lm -lraylib \
-          src/main.cpp -Ilib/stb/
+          src/main.c -Ilib/stb/
     then
         compiled=true
     else

@@ -37,5 +37,6 @@ bool PurchaseUpgrade(UPGRADE handle, int amount);
 void GetInfo(UPGRADE handle, UpgradeInfo *info);
 bool LoadGame();
 void SaveGame();
+void Wait(double elapsed_time);
 
 #endif

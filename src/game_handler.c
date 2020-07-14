@@ -129,3 +129,14 @@ void SaveGame()
     SaveGameToDisk(CONFIG_FILE, &state);
     printf("Game saved!\n");
 }
+
+void Wait(u_time elapsed_time)
+{
+    state.elapsed_time += elapsed_time;
+    // compute and set new speed
+    state.traveled_distance += TraveledDistance(state.current_speed,
+                                                elapsed_time,
+                                                state.current_acceleration);
+    // gather resources
+    // update state ?
+}

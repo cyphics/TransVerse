@@ -32,9 +32,6 @@ bool mouseLeftReleased;
 bool mouseRightPressed;
 bool mouseRightReleased;
 
-// Check if any key is pressed
-// NOTE: We limit keys check to keys between 32 (KEY_SPACE) and 126
-
 void SartGui()
 {
 
@@ -45,6 +42,7 @@ void SartGui()
     UnloadImage(grad);
     while (!WindowShouldClose())
     {
+        Wait((u_time)GetFrameTime()); // TODO make sure cast is ok
         BeginDrawing();
         {
             // Store input data

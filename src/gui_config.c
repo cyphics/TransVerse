@@ -348,6 +348,9 @@ void DrawStaticContent()
     for (i = 0; i < fieldsElem; ++i) DrawInteract(editFieldsList[i]);
     for (i = 0; i < amountSelectableUpgrades; ++i) DrawInteract(&selectUpgradesList[i]);
 
+    char elapsedTime[100];
+    sprintf(elapsedTime, "Elapsed time: %.1f", state.elapsed_time);
+    DrawText(elapsedTime, saveRect.x, saveRect.y + saveRect.height + padding, fontSize / 4, DARKGRAY);
 
     DrawInteract(&saveButton);
     if (DropDownMenu.visible) {

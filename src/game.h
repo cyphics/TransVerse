@@ -39,6 +39,10 @@ typedef struct upgrade
 } upgrade;
 
 typedef struct GameState{
+    u_speed current_speed;
+    u_distance traveled_distance;
+    u_time elapsed_time;
+    u_acceleration current_acceleration;
     upgrade upgrades_list[MAX_UPGRADES_AMOUNT];
     resource resources_list[MAX_RESOURCES_AMOUNT];
 } GameState;

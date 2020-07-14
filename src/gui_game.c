@@ -99,7 +99,6 @@ void RefreshUpgradesLists()
         }
         if (AreStrEquals(info.type, "science")) {
             availScienceUpgrades[scienceCount] = info;
-            printf("Science: %s\n", info.name);
             r = (Rectangle){availScience.x + padding,
                             availScience.y + padding +  (textRectHeight / 2 + padding) * scienceCount,
                             availScience.width - 2 * padding,
