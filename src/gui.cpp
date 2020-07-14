@@ -14,9 +14,9 @@ const int screenWidth = 1600;
 const int screenHeight = 600;
 
 // Hover animation
-float gradWidth = 30.0f;
-float gradHeight = 30.0f;
-int hoverLength = 6; // In frames
+const float gradWidth = 30.0f;
+const float gradHeight = 30.0f;
+const int hoverLength = 6; // In frames
 Rectangle staticRect = {0, 0, gradWidth, gradHeight};
 Texture2D gradientTexture;
 Color hovered = LIGHTGRAY;
@@ -95,7 +95,7 @@ void DrawHoverAnimLayer(Interact *i)
 
         Rectangle sourceRect = {rectX, i->rect.y + gradHeight + 20, rectWidth, gradHeight};
 
-        DrawTexturePro(gradientTexture, staticRect, intersect, Vector2(), 0, WHITE);
+        DrawTexturePro(gradientTexture, staticRect, intersect, (Vector2){}, 0, WHITE); // TODO check if the vector2 is correct
         // DrawRectangleLinesEx(movingRectangle, 1, BLACK);
     }
     if (i->isEditable && i->isHovered) {

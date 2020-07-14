@@ -5,26 +5,26 @@
    $Creator: Thierry Raeber$
    ======================================================================== */
 
-static upgrade u1 = { "Terminal", "structure", "another desc", {{"energy", 10}}, 1.2, 0, {} };
-static upgrade u2 = { "Quantum Generator", "science", "a desc", {}, 1.2, 0, {"Terminal"} };
-static upgrade u3 = { "Quantum Throttle", "structure", "blah", {}, 1.4, 0, {"Terminal", "Quantum Generator"} };
-static upgrade u4 = { "Magnet", "structure", "blah", {}, 1.4, 0, "" };
-static upgrade u5 = { "GPS Firmware", "software", "blah", {}, 1.4, 0, "" };
-static upgrade u6 = { "Kinetic pusher firmware", "software", "blah", {}, 1.4, 0, "" };
-static upgrade u7 = { "Quantum Magnetism", "science", "blah", {}, 1.4, 0, "" };
-static upgrade u8 = { "Quantum Expulsion", "science", "blah", {}, 1.4, 0, "" };
-static upgrade u9 = { "Kinetic Power", "structure", "blah", {}, 1.4, 0, "" };
-static upgrade u10 = { "Quantic Coil", "incremental", "blah", {}, 1.4, 0, "" };
-static upgrade u11 = { "Quantum Joule Cell", "incremental", "blah", {}, 1.4, 0, "" };
-static upgrade u12 = { "Quantum Conductor", "structure", "blah", {}, 1.4, 0, "" };
-static upgrade u13 = { "Quantum Synergy", "science", "blah", {}, 1.4, 0, "" };
+const static upgrade u1 = { "Terminal", "structure", "another desc", {{"energy", 10}}, 1.2, 0, {} };
+const static upgrade u2 = { "Quantum Generator", "science", "a desc", {}, 1.2, 0, {"Terminal"} };
+const static upgrade u3 = { "Quantum Throttle", "structure", "blah", {}, 1.4, 0, {"Terminal", "Quantum Generator"} };
+const static upgrade u4 = { "Magnet", "structure", "blah", {}, 1.4, 0, "" };
+const static upgrade u5 = { "GPS Firmware", "software", "blah", {}, 1.4, 0, "" };
+const static upgrade u6 = { "Kinetic pusher firmware", "software", "blah", {}, 1.4, 0, "" };
+const static upgrade u7 = { "Quantum Magnetism", "science", "blah", {}, 1.4, 0, "" };
+const static upgrade u8 = { "Quantum Expulsion", "science", "blah", {}, 1.4, 0, "" };
+const static upgrade u9 = { "Kinetic Power", "structure", "blah", {}, 1.4, 0, "" };
+const static upgrade u10 = { "Quantic Coil", "incremental", "blah", {}, 1.4, 0, "" };
+const static upgrade u11 = { "Quantum Joule Cell", "incremental", "blah", {}, 1.4, 0, "" };
+const static upgrade u12 = { "Quantum Conductor", "structure", "blah", {}, 1.4, 0, "" };
+const static upgrade u13 = { "Quantum Synergy", "science", "blah", {}, 1.4, 0, "" };
 
-static resource r1 = { "Knowledge", 4 };
-static resource r2 = { "Lines of code", 100 };
-static resource r3 = { "Energy", 10 };
+const static resource r1 = { "Knowledge", 4 };
+const static resource r2 = { "Lines of code", 100 };
+const static resource r3 = { "Energy", 10 };
 
-static upgrade init_upgrade_list[MAX_UPGRADES_AMOUNT] = {u1, u2, u3, u4, u5, u6, u7, u8, u9, u10, u11, u12, u13};
-static resource init_resources_list[MAX_RESOURCES_AMOUNT] = {r1, r2, r3};
+const static upgrade init_upgrade_list[MAX_UPGRADES_AMOUNT] = {u1, u2, u3, u4, u5, u6, u7, u8, u9, u10, u11, u12, u13};
+const static resource init_resources_list[MAX_RESOURCES_AMOUNT] = {r1, r2, r3};
 
 extern char *CONFIG_FILE;
 

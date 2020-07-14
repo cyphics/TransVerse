@@ -16,17 +16,19 @@ extern char *CONFIG_FILE;
 extern Vector2 mousePosition;
 extern int keyPressed;
 Font font;
-float fontSize = defaultFontSize;
 
-const int numUpgrades = MAX_UPGRADES_AMOUNT;
+const float scaleFactor = 1;
+const float fontSize = defaultFontSize * scaleFactor;
+#define numUpgrades  MAX_UPGRADES_AMOUNT
+const float maxUpgradeNameLength = 250 * scaleFactor;
+const float padding = 5 * scaleFactor;
+const float xAnchor = 20 * scaleFactor, yAnchor = 20 * scaleFactor;
+const float textRectHeight = 30 * scaleFactor;
 
 // Common
 bool initDone = false;
-float scaleFactor = 1;
-float maxUpgradeNameLength = 250 * scaleFactor;
-float padding = 5 * scaleFactor;
-float xAnchor = 20 * scaleFactor, yAnchor = 20 * scaleFactor;
-float textRectHeight = 30 * scaleFactor;
+
+
 char currentUpgradeIncreaseString[6];
 char currentUpgradeAmountString[10];
 char currentUpgradeBoughtString[10];
@@ -39,10 +41,10 @@ upgrade *dragedUpgrade;
 
 // Upgrade selection panel
 
-float selectUpgradeRectWidth = maxUpgradeNameLength;
-float selectMainRectWidth = selectUpgradeRectWidth + 2 * padding;
-float selectMainRectHeight = textRectHeight * numUpgrades + padding * (numUpgrades + 1);
-float tabWidth = selectMainRectWidth / 4;
+const float selectUpgradeRectWidth = maxUpgradeNameLength;
+const float selectMainRectWidth = selectUpgradeRectWidth + 2 * padding;
+const float selectMainRectHeight = textRectHeight * numUpgrades + padding * (numUpgrades + 1);
+const float tabWidth = selectMainRectWidth / 4;
 
 Rectangle structureRect = {xAnchor,
                            yAnchor - textRectHeight/2,
@@ -60,10 +62,10 @@ Rectangle incrementalRect = {xAnchor + tabWidth * 3,
                              tabWidth, textRectHeight/2};
 
 Rectangle selectMainRect = {xAnchor, yAnchor,
-                            selectMainRectWidth, selectMainRectHeight};
+                                  selectMainRectWidth, selectMainRectHeight};
 
-float addButtonWidth = 20;
-Rectangle addUpgradeButton = {xAnchor, selectMainRect.y + selectMainRect.height + padding,
+const float addButtonWidth = 20;
+Rectangle addUpgradeButton = {xAnchor, 0,
                               addButtonWidth, addButtonWidth};
 bool isAboutToAddNewUpgrade = false;
 bool isAboutToRemoveUpgrade = false;
@@ -76,35 +78,35 @@ bool isAboutToSelect = false;
 // Upgrade edit panel
 upgrade *currentUpgradeToEdit;
 
-float displayRectXAnchor = xAnchor + maxUpgradeNameLength + 20 * scaleFactor;
-float displayRectYAnchor = yAnchor;
-Rectangle displayNameRect = {displayRectXAnchor + padding,
-                             displayRectYAnchor + padding,
-                             selectMainRectWidth, textRectHeight};
-Rectangle displayTypeRect = {displayNameRect.x + displayNameRect.width + padding,
-                             displayRectYAnchor + padding, 130 * scaleFactor, textRectHeight};
-Rectangle displayIncreaseRect = {displayTypeRect.x + displayTypeRect.width + padding,
-                                 displayRectYAnchor + padding, 50 * scaleFactor, textRectHeight};
-Rectangle displayDescRect = {displayRectXAnchor + padding, displayRectYAnchor + padding + 40 * scaleFactor,
-                             displayNameRect.width + displayTypeRect.width + displayIncreaseRect.width + 2 * padding, textRectHeight * 2};
-Rectangle displayDependRect = {displayRectXAnchor + padding,
-                               displayDescRect.y + displayDescRect.height + padding,
-                               displayNameRect.width, textRectHeight};
-Rectangle displayResourceRect = {displayTypeRect.x,
-                                 displayDependRect.y,
-                                 displayTypeRect.width, textRectHeight};
-Rectangle displayAmountRect = {displayIncreaseRect.x,
-                               displayDependRect.y,
-                               displayIncreaseRect.width, textRectHeight};
-Rectangle displayBoughtRect = {displayResourceRect.x,
-                               displayDependRect.y + displayDependRect.height + padding * 2,
-                               50, displayNameRect.height};
-float displayMainRectWidth = displayNameRect.width + displayTypeRect.width + displayIncreaseRect.width + 4 * padding;
-float displayMainRectHeight = 300.0f * scaleFactor;
+const float displayRectXAnchor = xAnchor + maxUpgradeNameLength + 20 * scaleFactor;
+const float displayRectYAnchor = yAnchor;
+const Rectangle displayNameRect = {displayRectXAnchor + padding,
+                                   displayRectYAnchor + padding,
+                                   selectMainRectWidth, textRectHeight};
+const Rectangle displayTypeRect = {displayNameRect.x + displayNameRect.width + padding,
+                                   displayRectYAnchor + padding, 130 * scaleFactor, textRectHeight};
+const Rectangle displayIncreaseRect = {displayTypeRect.x + displayTypeRect.width + padding,
+                                       displayRectYAnchor + padding, 50 * scaleFactor, textRectHeight};
+const Rectangle displayDescRect = {displayRectXAnchor + padding, displayRectYAnchor + padding + 40 * scaleFactor,
+                                   displayNameRect.width + displayTypeRect.width + displayIncreaseRect.width + 2 * padding, textRectHeight * 2};
+const Rectangle displayDependRect = {displayRectXAnchor + padding,
+                                     displayDescRect.y + displayDescRect.height + padding,
+                                     displayNameRect.width, textRectHeight};
+const Rectangle displayResourceRect = {displayTypeRect.x,
+                                       displayDependRect.y,
+                                       displayTypeRect.width, textRectHeight};
+const Rectangle displayAmountRect = {displayIncreaseRect.x,
+                                     displayDependRect.y,
+                                     displayIncreaseRect.width, textRectHeight};
+const Rectangle displayBoughtRect = {displayResourceRect.x,
+                                     displayDependRect.y + displayDependRect.height + padding * 2,
+                                     50, displayNameRect.height};
+const float displayMainRectWidth = displayNameRect.width + displayTypeRect.width + displayIncreaseRect.width + 4 * padding;
+const float displayMainRectHeight = 300.0f * scaleFactor;
 Rectangle displayMainRect = {displayRectXAnchor, displayRectYAnchor,
                              displayMainRectWidth, displayMainRectHeight};
-Rectangle saveRect = {displayRectXAnchor, displayRectYAnchor + displayMainRectWidth + padding,
-                      100, 30};
+const Rectangle saveRect = {displayRectXAnchor, displayRectYAnchor + displayMainRectWidth + padding,
+                            100, 30};
 Interact saveButton = {"saveBtn", "", saveRect,"Save", true, false};
 bool isAboutToSave = false;
 
@@ -147,7 +149,7 @@ struct DropDownMenu {
     char **items_list;
     int num_items;
     Rectangle rect;
-    bool visible = false;
+    bool visible;
 } DropDownMenu;
 
 
@@ -158,13 +160,17 @@ void BuildSelectUpgradesList(char *newTypeList)
     memset(selectUpgradesList, 0, sizeof(selectUpgradesList));
     for (int i = 0; i < numUpgrades; ++i) {
         if (AreStrEquals(state.upgrades_list[i].type, currentTypeList)) {
-            selectUpgradesList[amountSelectableUpgrades]
-                = {"", "",
-                   {xAnchor + padding,
-                    yAnchor + padding +  (textRectHeight + padding) * amountSelectableUpgrades,
-                    selectUpgradeRectWidth, textRectHeight},
-                   state.upgrades_list[i].id, true, false};
-            amountSelectableUpgrades++;
+            Rectangle r = {xAnchor + padding,
+                           yAnchor + padding +  (textRectHeight + padding) * amountSelectableUpgrades,
+                           selectUpgradeRectWidth, textRectHeight};
+
+            Interact inter = {};
+            inter.rect = r;
+            inter.text = state.upgrades_list[i].id;
+            inter.isHoverable = true;
+            inter.isEditable = false;
+            selectUpgradesList[amountSelectableUpgrades] = inter;
+                amountSelectableUpgrades++;
         }
     }
     selectMainRect.height = (textRectHeight + padding) * amountSelectableUpgrades + 2 * padding;

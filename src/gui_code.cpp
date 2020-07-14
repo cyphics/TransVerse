@@ -15,7 +15,7 @@ Color backgroundColor = DARKBROWN;
 Color textColor = BEIGE;
 Color textColorBack = {136, 137, 41, 255};
 char symbol;
-Font editorFont = GetFontDefault();
+// Font editorFont = GetFontDefault();
 float editorAnchorX, editorAnchorY;
 Rectangle codeContainer;
 int codeFontSize = 10;
@@ -43,7 +43,7 @@ void ResizeEditor(float x, float y)
     editorAnchorX = x;
     editorAnchorY = y;
 
-    codeContainer = { editorAnchorX, editorAnchorY, 300, 250};
+    codeContainer = (Rectangle){ editorAnchorX, editorAnchorY, 300, 250};
     OpenFile("../assets/3dfirmware.txt");
 }
 
@@ -61,12 +61,4 @@ void TypeCode()
 
     DrawText(textToDraw, editorAnchorX + padding, editorAnchorY + padding, codeFontSize, textColorBack);
 
-    // DrawTextRec(editorFont, textToDraw, codeContainer, codeFontSize, codeFontPadding, true, textColor);
-
-
-    // DrawText("PRESS [ENTER] to RESTART!", 240, 500, 20, LIGHTGRAY);
-    // DrawText("PRESS [SPACE] to SPEED UP!", 239, 540, 20, LIGHTGRAY);
-
-
-    //----------------------------------------------------------------------------------
 }
