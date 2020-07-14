@@ -11,8 +11,8 @@
 #include "gui.h"
 #include "game.h"
 #include "game_handler.h"
-#include "helper.cpp"
-#include "gui_code.cpp"
+#include "helper.c"
+#include "gui_code.c"
 
 bool isGameGuiInit = false;
 const float interfaceAnchorX = 800.0f;

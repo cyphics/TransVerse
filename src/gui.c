@@ -7,8 +7,8 @@
 #include <raylib.h>
 #include <stb/stb.h>
 
-#include "gui_config.cpp"
-#include "gui_game.cpp"
+#include "gui_config.c"
+#include "gui_game.c"
 
 const int screenWidth = 1600;
 const int screenHeight = 600;

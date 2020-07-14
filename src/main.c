@@ -1,10 +1,10 @@
-#include "gui.cpp"
-#include "game.cpp"
-#include "game_handler.cpp"
-#include "game_debug.cpp"
+#include "gui.c"
+#include "game.c"
+#include "game_handler.c"
+#include "game_debug.c"
 #include "helper.h"
-#include "physics.cpp"
-#include "storage.cpp"
+#include "physics.c"
+#include "storage.c"
 // #define STB_DS_IMPLEMENTATION
 // #include "../lib/stb/stb_ds.h"
 
