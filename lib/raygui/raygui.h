@@ -748,7 +748,7 @@ bool GuiWindowBox(Rectangle bounds, const char *title)
 
     Rectangle statusBar = { bounds.x, bounds.y, bounds.width, statusBarHeight };
     if (bounds.height < statusBarHeight*2) bounds.height = statusBarHeight*2;
-    
+
     Rectangle windowPanel = { bounds.x, bounds.y + statusBarHeight - 1, bounds.width, bounds.height - statusBarHeight };
     Rectangle closeButtonRec = { statusBar.x + statusBar.width - GuiGetStyle(STATUSBAR, BORDER_WIDTH) - 20,
                                  statusBar.y + statusBarHeight/2 - 18/2, 18, 18 };
@@ -762,7 +762,7 @@ bool GuiWindowBox(Rectangle bounds, const char *title)
     //--------------------------------------------------------------------
     GuiStatusBar(statusBar, title); // Draw window header as status bar
     GuiPanel(windowPanel);          // Draw window base
-    
+
     // Draw window close button
     int tempBorderWidth = GuiGetStyle(BUTTON, BORDER_WIDTH);
     int tempTextAlignment = GuiGetStyle(BUTTON, TEXT_ALIGNMENT);
@@ -943,7 +943,7 @@ Rectangle GuiScrollPanel(Rectangle bounds, Rectangle content, Vector2 *scroll)
 
     // Draw scrollbar lines depending on current state
     GuiDrawRectangle(bounds, GuiGetStyle(DEFAULT, BORDER_WIDTH), Fade(GetColor(GuiGetStyle(LISTVIEW, (float)BORDER + (state*3))), guiAlpha), BLANK);
-    
+
     // Set scrollbar slider size back to the way it was before
     GuiSetStyle(SCROLLBAR, SCROLL_SLIDER_SIZE, slider);
     //--------------------------------------------------------------------
@@ -1194,7 +1194,7 @@ bool GuiCheckBox(Rectangle bounds, const char *text, bool checked)
     // Draw control
     //--------------------------------------------------------------------
     GuiDrawRectangle(bounds, GuiGetStyle(CHECKBOX, BORDER_WIDTH), Fade(GetColor(GuiGetStyle(CHECKBOX, BORDER + (state*3))), guiAlpha), BLANK);
-    
+
     if (checked)
     {
         Rectangle check = { bounds.x + GuiGetStyle(CHECKBOX, BORDER_WIDTH) + GuiGetStyle(CHECKBOX, CHECK_PADDING),
@@ -1426,7 +1426,7 @@ bool GuiTextBox(Rectangle bounds, char *text, int textSize, bool editMode)
                 {
                     int byteLength = 0;
                     const char *textUtf8 = CodepointToUtf8(key, &byteLength);
-                    
+
                     for (int i = 0; i < byteLength; i++)
                     {
                         text[keyCount] = textUtf8[i];
@@ -1674,25 +1674,199 @@ bool GuiValueBox(Rectangle bounds, const char *text, int *value, int minValue, i
     Color baseColor = BLANK;
     if (state == GUI_STATE_PRESSED) baseColor = GetColor(GuiGetStyle(VALUEBOX, BASE_COLOR_PRESSED));
     else if (state == GUI_STATE_DISABLED) baseColor = GetColor(GuiGetStyle(VALUEBOX, BASE_COLOR_DISABLED));
-    
+
     // WARNING: BLANK color does not work properly with Fade()
     GuiDrawRectangle(bounds, GuiGetStyle(VALUEBOX, BORDER_WIDTH), Fade(GetColor(GuiGetStyle(VALUEBOX, BORDER + (state*3))), guiAlpha), baseColor);
     GuiDrawText(textValue, GetTextBounds(VALUEBOX, bounds), GUI_TEXT_ALIGN_CENTER, Fade(GetColor(GuiGetStyle(VALUEBOX, TEXT + (state*3))), guiAlpha));
 
     // Draw blinking cursor
-    if ((state == GUI_STATE_PRESSED) && (editMode && ((framesCounter/20)%2 == 0))) 
+    if ((state == GUI_STATE_PRESSED) && (editMode && ((framesCounter/20)%2 == 0)))
     {
         // NOTE: ValueBox internal text is always centered
         Rectangle cursor = { bounds.x + GetTextWidth(textValue)/2 + bounds.width/2 + 2, bounds.y + 2*GuiGetStyle(VALUEBOX, BORDER_WIDTH), 1, bounds.height - 4*GuiGetStyle(VALUEBOX, BORDER_WIDTH) };
         GuiDrawRectangle(cursor, 0, BLANK, Fade(GetColor(GuiGetStyle(VALUEBOX, BORDER_COLOR_PRESSED)), guiAlpha));
     }
-    
+
     // Draw text label if provided
     if (text != NULL) GuiDrawText(text, textBounds, (GuiGetStyle(VALUEBOX, TEXT_ALIGNMENT) == GUI_TEXT_ALIGN_RIGHT)? GUI_TEXT_ALIGN_LEFT : GUI_TEXT_ALIGN_RIGHT, Fade(GetColor(GuiGetStyle(LABEL, TEXT + (state*3))), guiAlpha));
     //--------------------------------------------------------------------
 
     return pressed;
 }
+
+double GuiDMValueBox(Rectangle bounds, double value, double minValue, double maxValue, int precision, bool editMode) {
+    // FIXME: Hope all those `memmove()` functions are correctly used so we won't leak memory or overflow the buffer !!!
+    static int framesCounter = 0;           // Required for blinking cursor
+    static int cursor = 0;                  // Required for tracking the cursor position (only for a single active valuebox)
+
+    enum {cursorTimer = 6, maxChars = 31, textPadding = 2};
+
+    GuiControlState state = GuiGetState();
+
+    // Make sure value is in range
+    if(maxValue != minValue){
+        if(value < minValue) value = minValue;
+        if(value > maxValue) value = maxValue;
+    }
+
+    char textValue[maxChars + 1] = "\0";
+    snprintf(textValue, maxChars, "%.*f", precision, value); // NOTE: use `snprintf` here so we don't overflow the buffer
+    int len = strlen(textValue);
+
+    bool valueHasChanged = false;
+
+    // Update control
+    //--------------------------------------------------------------------
+    if ((state != GUI_STATE_DISABLED) && !guiLocked)
+    {
+        if (editMode)
+        {
+            // Make sure cursor position is correct
+            if(cursor > len) cursor = len;
+            if(cursor < 0) cursor = 0;
+
+            state = GUI_STATE_PRESSED;
+            framesCounter++;
+
+            if(IsKeyPressed(KEY_RIGHT) || (IsKeyDown(KEY_RIGHT) && (framesCounter%cursorTimer == 0))) {
+                // MOVE CURSOR TO RIGHT
+                ++cursor;
+                framesCounter = 0;
+            } else if(IsKeyPressed(KEY_LEFT) || (IsKeyDown(KEY_LEFT) && (framesCounter%cursorTimer == 0))) {
+                // MOVE CURSOR TO LEFT
+                --cursor;
+                framesCounter = 0;
+            } else if (IsKeyPressed(KEY_BACKSPACE) || (IsKeyDown(KEY_BACKSPACE) && (framesCounter%cursorTimer) == 0)) {
+                // HANDLE BACKSPACE
+                if(cursor > 0) {
+                    if(textValue[cursor-1] != '.') {
+                        if(cursor < len )
+                            memmove(&textValue[cursor-1], &textValue[cursor], len-cursor);
+                        textValue[len - 1] = '\0';
+                        valueHasChanged = true;
+                    }
+                    --cursor;
+                }
+                framesCounter = 0;
+            } else if (IsKeyPressed(KEY_DELETE) || (IsKeyDown(KEY_DELETE) && (framesCounter%cursorTimer) == 0)) {
+                // HANDLE DEL
+                if(len > 0 && cursor < len && textValue[cursor] != '.') {
+                    memmove(&textValue[cursor], &textValue[cursor+1], len-cursor);
+                    textValue[len] = '\0';
+                    len -= 1;
+                    valueHasChanged = true;
+                }
+            } else if (IsKeyPressed(KEY_HOME)) {
+                // MOVE CURSOR TO START
+                cursor = 0;
+            } else if (IsKeyPressed(KEY_END)) {
+                // MOVE CURSOR TO END
+                cursor = len;
+            }  else if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_C)) {
+                // COPY
+                SetClipboardText(textValue);
+            } else if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_X)) {
+                // CUT
+                SetClipboardText(textValue);
+                textValue[0] = '\0';
+                cursor = len = 0;
+                value = 0.0; // set it to 0 and pretend the value didn't change
+            } else if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_V)) {
+                // PASTE
+                const char* clip = GetClipboardText();
+                int clipLen = strlen(clip);
+                clipLen = clipLen > maxChars ? maxChars : clipLen;
+                memcpy(textValue, clip, clipLen);
+                len = clipLen;
+                textValue[len] = '\0';
+                valueHasChanged = true;
+            }
+            else {
+                // HANDLE KEY PRESS
+                int key = GetKeyPressed();
+                if( ((len < maxChars) && (key >= 48) && (key <= 57)) || (key == 46) || (key == 45)  ) // only allow 0..9, minus(-) and dot(.)
+                {
+                    if(precision != 0 && cursor < len) { // when we have decimals we can't insert at the end
+                        memmove(&textValue[cursor], &textValue[cursor-1], len+1-cursor);
+                        textValue[len+1] = '\0';
+                        textValue[cursor] = (char)key;
+                        cursor++;
+                        valueHasChanged = true;
+                    }
+                    else if(precision == 0) {
+                        if(cursor < len) memmove(&textValue[cursor], &textValue[cursor-1], len+1-cursor);
+                        len += 1;
+                        textValue[len+1] = '\0';
+                        textValue[cursor] = (char)key;
+                        cursor++;
+                        valueHasChanged = true;
+                    }
+                }
+            }
+
+            // Make sure cursor position is correct
+            if(cursor > len) cursor = len;
+            if(cursor < 0) cursor = 0;
+        }
+        else
+        {
+            if (CheckCollisionPointRec(GetMousePosition(), bounds))
+            {
+                state = GUI_STATE_FOCUSED;
+                if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) framesCounter = 0;
+            }
+        }
+    }
+    //--------------------------------------------------------------------
+
+    // Draw control
+    //--------------------------------------------------------------------
+    DrawRectangleLinesEx(bounds, GuiGetStyle(VALUEBOX, BORDER_WIDTH), Fade(GetColor(GuiGetStyle(VALUEBOX, BORDER + (state*3))), guiAlpha));
+
+    Rectangle textBounds = {bounds.x + GuiGetStyle(VALUEBOX, BORDER_WIDTH) + textPadding, bounds.y + GuiGetStyle(VALUEBOX, BORDER_WIDTH),
+        bounds.width - 2*(GuiGetStyle(VALUEBOX, BORDER_WIDTH) + textPadding), bounds.height - 2*GuiGetStyle(VALUEBOX, BORDER_WIDTH)};
+
+    int textWidth = GetTextWidth(textValue);
+    if(textWidth > textBounds.width) textBounds.width = textWidth;
+
+    if (state == GUI_STATE_PRESSED)
+    {
+        DrawRectangle(bounds.x + GuiGetStyle(VALUEBOX, BORDER_WIDTH), bounds.y + GuiGetStyle(VALUEBOX, BORDER_WIDTH), bounds.width - 2*GuiGetStyle(VALUEBOX, BORDER_WIDTH), bounds.height - 2*GuiGetStyle(VALUEBOX, BORDER_WIDTH), Fade(GetColor(GuiGetStyle(VALUEBOX, BASE_COLOR_PRESSED)), guiAlpha));
+
+        // Draw blinking cursor
+        // NOTE: ValueBox internal text is always centered
+        if (editMode && ((framesCounter/20)%2 == 0)) {
+            // Measure text until the cursor
+            int textWidthCursor = -2;
+            if(cursor > 0) {
+                char c = textValue[cursor];
+                textValue[cursor] = '\0';
+                textWidthCursor = GetTextWidth(textValue);
+                textValue[cursor] = c;
+            }
+            //DrawRectangle(bounds.x + textWidthCursor + textPadding + 2, bounds.y + 2*GuiGetStyle(VALUEBOX, BORDER_WIDTH), 1, bounds.height - 4*GuiGetStyle(VALUEBOX, BORDER_WIDTH), Fade(GetColor(GuiGetStyle(VALUEBOX, BORDER_COLOR_PRESSED)), guiAlpha));
+            DrawRectangle(bounds.x + textWidthCursor + (int)((bounds.width - textWidth - textPadding)/2.0f) + 2, bounds.y + 2*GuiGetStyle(VALUEBOX, BORDER_WIDTH), 1, bounds.height - 4*GuiGetStyle(VALUEBOX, BORDER_WIDTH), Fade(GetColor(GuiGetStyle(VALUEBOX, BORDER_COLOR_PRESSED)), guiAlpha));
+        }
+    }
+    else if (state == GUI_STATE_DISABLED)
+    {
+        DrawRectangle(bounds.x + GuiGetStyle(VALUEBOX, BORDER_WIDTH), bounds.y + GuiGetStyle(VALUEBOX, BORDER_WIDTH), bounds.width - 2*GuiGetStyle(VALUEBOX, BORDER_WIDTH), bounds.height - 2*GuiGetStyle(VALUEBOX, BORDER_WIDTH), Fade(GetColor(GuiGetStyle(VALUEBOX, BASE_COLOR_DISABLED)), guiAlpha));
+    }
+
+    GuiDrawText(textValue, textBounds, GUI_TEXT_ALIGN_CENTER, Fade(GetColor(GuiGetStyle(VALUEBOX, TEXT + (state*3))), guiAlpha));
+
+    value = valueHasChanged ? strtod(textValue, NULL) : value;
+
+    // Make sure value is in range
+    if(maxValue != minValue){
+        if(value < minValue) value = minValue;
+        if(value > maxValue) value = maxValue;
+    }
+
+    return value;
+}
+
+
 
 // Text Box control with multiple lines
 bool GuiTextBoxMulti(Rectangle bounds, char *text, int textSize, bool editMode)
@@ -2119,7 +2293,7 @@ int GuiScrollBar(Rectangle bounds, int value, int minValue, int maxValue)
     // Draw control
     //--------------------------------------------------------------------
     GuiDrawRectangle(bounds, GuiGetStyle(SCROLLBAR, BORDER_WIDTH), Fade(GetColor(GuiGetStyle(LISTVIEW, BORDER + state*3)), guiAlpha), Fade(GetColor(GuiGetStyle(DEFAULT, BORDER_COLOR_DISABLED)), guiAlpha));   // Draw the background
-    
+
     GuiDrawRectangle(scrollbar, 0, BLANK, Fade(GetColor(GuiGetStyle(BUTTON, BASE_COLOR_NORMAL)), guiAlpha));     // Draw the scrollbar active area background
     GuiDrawRectangle(slider, 0, BLANK, Fade(GetColor(GuiGetStyle(SLIDER, BORDER + state*3)), guiAlpha));         // Draw the slider bar
 
@@ -3333,13 +3507,13 @@ static void GuiDrawText(const char *text, Rectangle bounds, int alignment, Color
 // Gui draw rectangle using default raygui plain style with borders
 static void GuiDrawRectangle(Rectangle rec, int borderWidth, Color borderColor, Color color)
 {
-    if (color.a > 0) 
+    if (color.a > 0)
     {
         // Draw rectangle filled with color
         DrawRectangle(rec.x, rec.y, rec.width, rec.height, color);
     }
-    
-    if (borderWidth > 0) 
+
+    if (borderWidth > 0)
     {
         // Draw rectangle border lines with color
         DrawRectangle(rec.x, rec.y, rec.width, borderWidth, borderColor);
@@ -3347,7 +3521,7 @@ static void GuiDrawRectangle(Rectangle rec, int borderWidth, Color borderColor, 
         DrawRectangle(rec.x + rec.width - borderWidth, rec.y + borderWidth, borderWidth, rec.height - 2*borderWidth, borderColor);
         DrawRectangle(rec.x, rec.y + rec.height - borderWidth, rec.width, borderWidth, borderColor);
     }
-    
+
     // TODO: For n-patch-based style we would need: [state] and maybe [control]
     // In this case all controls drawing logic should be moved to this function... I don't like it...
 }
@@ -3585,7 +3759,7 @@ static Color Fade(Color color, float alpha)
 {
     if (alpha < 0.0f) alpha = 0.0f;
     else if (alpha > 1.0f) alpha = 1.0f;
-    
+
     Color result = { color.r, color.g, color.b, (unsigned char)(255.0f*alpha) };
 
     return result;

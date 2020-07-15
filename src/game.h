@@ -6,6 +6,7 @@
    ======================================================================== */
 
 #if !defined(GAME_H)
+#include "types.h"
 #define GAME_H
 
 #define MAX_UPGRADES_AMOUNT 30

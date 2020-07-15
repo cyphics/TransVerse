@@ -49,7 +49,7 @@ void ResizeEditor(float x, float y)
 
 void TypeCode()
 {
-
+    int keyPressed = GetKeyPressed();
     DrawRectangleLinesEx(codeContainer, 1, BLACK);
     if ((keyPressed >= 32) && (keyPressed <= 125)) {
         codePosition+= textStep;

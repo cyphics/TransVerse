@@ -2,6 +2,7 @@
 
 start_compile="$(date -u +%s.%N)"
 ctags -e -R .
+compiled=false
 
 # -Wno-narrowing -Wno-enum-compare are fore  raygui.h
 
@@ -18,7 +19,18 @@ build()
     fi
 }
 
-build
+build_cmake()
+{
+    cd build/
+    cmake ../
+    if cmake --build .
+    then
+        compiled=true
+    fi
+}
+
+#build
+build_cmake
 
 end_compile="$(date -u +%s.%N)"
 elapsed_compile="$(bc <<<"$end_compile-$start_compile")"
@@ -26,7 +38,6 @@ echo ""
 echo "Program compiled in $elapsed_compile"
 
 if [ "$compiled" = true ]; then
-    cd build
     ./TransVerse
 fi
 

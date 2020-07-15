@@ -5,14 +5,17 @@
    $Creator: Thierry Raeber$
    ======================================================================== */
 #include <raylib.h>
-#define RAYGUI_IMPLEMENTATION
-#include "../lib/raygui/raygui.h"
+// #define RAYGUI_IMPLEMENTATION
+// #include "../lib/raygui/raygui.h"
+// #define GUI_PROPERTY_LIST_IMPLEMENTATION
+// #include "../lib/raygui/dm_property_list.h"
 
 #include "helper.h"
 #include "game_handler.h"
 #include "gui.h"
 
 extern char *CONFIG_FILE;
+#define SIZEOF(A) (sizeof(A)/sizeof(A[0]))
 
 // extern GameState state;
 extern Vector2 mousePosition;
@@ -46,25 +49,25 @@ upgrade *dragedUpgrade;
 const float selectUpgradeRectWidth = maxUpgradeNameLength;
 const float selectMainRectWidth = selectUpgradeRectWidth + 2 * padding;
 const float selectMainRectHeight = textRectHeight * numUpgrades + padding * (numUpgrades + 1);
-const float tabWidth = selectMainRectWidth / 4;
+const float selectTypeTabWidth = selectMainRectWidth / 4;
 
-Rectangle structureRect = {anchorX,
-                           anchorY - textRectHeight/2,
-                           tabWidth,
-                           textRectHeight/2};
-Rectangle scienceRect = {anchorX + tabWidth,
-                         anchorY - textRectHeight/2,
-                         tabWidth,
-                         textRectHeight/2};Rectangle softwareRect = {anchorX + tabWidth * 2,
-                                                                     anchorY - textRectHeight/2,
-                                                                     tabWidth,
-                                                                     textRectHeight/2};
-Rectangle incrementalRect = {anchorX + tabWidth * 3,
-                             anchorY - textRectHeight/2,
-                             tabWidth, textRectHeight/2};
+// Rectangle structRect = {anchorX,
+//                            anchorY - textRectHeight/2,
+//                            selectTypeTabWidth,
+//                            textRectHeight/2};
+// Rectangle scienceRect = {anchorX + selectTypeTabWidth,
+//                          anchorY - textRectHeight/2,
+//                          selectTypeTabWidth,
+//                          textRectHeight/2};Rectangle softwareRect = {anchorX + selectTypeTabWidth * 2,
+//                                                                      anchorY - textRectHeight/2,
+//                                                                      selectTypeTabWidth,
+//                                                                      textRectHeight/2};
+// Rectangle incrementalRect = {anchorX + selectTypeTabWidth * 3,
+//                              anchorY - textRectHeight/2,
+//                              selectTypeTabWidth, textRectHeight/2};
 
-Rectangle selectMainRect = {anchorX, anchorY,
-                            selectMainRectWidth, selectMainRectHeight};
+// Rectangle selectMainRect = {anchorX, anchorY,
+//                             selectMainRectWidth, selectMainRectHeight};
 
 const float addButtonWidth = 20;
 Rectangle addUpgradeButton = {anchorX, 0,
@@ -130,8 +133,8 @@ bool isAboutToRemoveDependency = false;
 
 
 char dropDownMenuResult[30] = {};
-char *typesList[] = {"science", "incremental", "structure", "software"};
-char *resourcesList[] = {"energy", "code", "software", "copper", "steel"};
+const char *typesList[] = {"science", "incremental", "structure", "software"};
+const char *resourcesList[] = {"energy", "code", "software", "copper", "steel"};
 
 const Rectangle gameStateRectangle = {anchorX, displayMainRect.y + displayMainRect.height + padding,
                                       selectMainRectWidth + displayMainRectWidth + padding * 2, 200
@@ -160,12 +163,26 @@ Interact *editFieldsList[] = { &editNameInteract,
 
 struct DropDownMenu {
     char *destination;
-    char **items_list;
+    const char **items_list;
     int num_items;
     Rectangle rect;
     bool visible;
 } DropDownMenu;
 
+// GuiDMProperty prop[] = {
+//     PBOOL("Bool", 0, true),
+//     PSECTION("#102#SECTION", 0, 2),
+//     PINT("Int", 0, 123),
+//     PFLOAT("Float", 0, 0.99f),
+//     PTEXT("Text", 0, (char*)&(char[30]){"Hello!"}, 30),
+//     PSELECT("Select", 0, "ONE;TWO;THREE;FOUR", 0),
+//     PINT_RANGE("Int Range", 0, 32, 1, 0, 100),
+//     PRECT("Rect", 0, 0, 0, 100, 200),
+//     PVEC2("Vec2", 0, 20, 20),
+//     PVEC3("Vec3", 0, 12, 13, 14),
+//     PVEC4("Vec4", 0, 12, 13, 14, 15),
+//     PCOLOR("Color", 0, 0, 255, 0, 255),
+// };
 
 void BuildSelectUpgradesList(char *newTypeList)
 {
@@ -276,7 +293,7 @@ void RemoveResource()
 }
 
 
-void OpenDropDownMenu(char *target, char **items_list, int num_items, float anchorX, float anchorY)
+void OpenDropDownMenu(char *target, const char **items_list, int num_items, float anchorX, float anchorY)
 {
     // Set width of selector
     float width = 0;
@@ -371,34 +388,36 @@ void DrawStaticContent()
         DrawDropDownMenu();
     }
 
-    GuiGroupBox(selectMainRect, "Upgrades");
-    GuiGroupBox(displayMainRect, "Edit upgrade");
-    GuiLabel(speedRect, "Speed");
+    // GuiGroupBox(selectMainRect, "Upgrades");
+    // GuiGroupBox(displayMainRect, "Edit upgrade");
+    // GuiLabel(speedRect, "Speed");
 
-    int style = GuiGetStyle(SCROLLBAR, BORDER_WIDTH);
-    style = GuiCheckBox((Rectangle){ 565, 280, 20, 20 }, "ARROWS_VISIBLE", GuiGetStyle(SCROLLBAR, ARROWS_VISIBLE));
-    GuiSetStyle(SCROLLBAR, ARROWS_VISIBLE, style);
+    // int style = GuiGetStyle(SCROLLBAR, BORDER_WIDTH);
+    // style = GuiCheckBox((Rectangle){ 565, 280, 20, 20 }, "ARROWS_VISIBLE", GuiGetStyle(SCROLLBAR, ARROWS_VISIBLE));
+    // GuiSetStyle(SCROLLBAR, ARROWS_VISIBLE, style);
 
 
-    if (GuiButton(scienceRect, "Science")) {
-        BuildSelectUpgradesList("science");
-    }
+    // if (GuiButton(scienceRect, "Science")) {
+    //     BuildSelectUpgradesList("science");
+    // }
 
-    if (GuiButton(incrementalRect, "Incremental")) {
-        BuildSelectUpgradesList("incremental");
-    }
+    // if (GuiButton(incrementalRect, "Incremental")) {
+    //     BuildSelectUpgradesList("incremental");
+    // }
 
-    if (GuiButton(structureRect, "Structure")) {
-        BuildSelectUpgradesList("structure");
-    }
+    // if (GuiButton(structRect, "Structure")) {
+    //     BuildSelectUpgradesList("structure");
+    // }
 
-    if (GuiButton(softwareRect, "Software")) {
-        BuildSelectUpgradesList("software");
-    }
+    // if (GuiButton(softwareRect, "Software")) {
+    //     BuildSelectUpgradesList("software");
+    // }
 
-    if (GuiButton(saveRect, "Save")) {
-        SaveGame();
-    };
+    // if (GuiButton(saveRect, "Save")) {
+    //     SaveGame();
+    // };
+
+
 
 }
 
@@ -546,7 +565,7 @@ void HandleMouseOver()
                         currentUpgradeToEdit->initial_price.resources[0].amount = strtol(editAmountInteract.text, NULL, 10);
                     }
                 } else if (AreStrEquals(editField->id, "bought")) {
- if ((keyPressed >= 48) && (keyPressed <= 57)) {
+                    if ((keyPressed >= 48) && (keyPressed <= 57)) {
                         editField->text[cursorPos] = (char)keyPressed;
                         editField->text[cursorPos + 1] = '\0';
                         currentUpgradeToEdit->amount_bought = strtol(editBoughtInteract.text, NULL, 10);

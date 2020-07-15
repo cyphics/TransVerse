@@ -7,8 +7,8 @@
 #include <raylib.h>
 #include <stb/stb.h>
 
-#include "gui_config.c"
-#include "gui_config_2.c"
+// #include "gui_config.c"
+#include "testRayGui.c"
 #include "gui_game.c"
 
 const int screenWidth = 1600;
@@ -33,6 +33,7 @@ bool mouseLeftReleased;
 bool mouseRightPressed;
 bool mouseRightReleased;
 
+char some_text[100];
 void SartGui()
 {
 
@@ -43,23 +44,23 @@ void SartGui()
     UnloadImage(grad);
     while (!WindowShouldClose())
     {
-        Wait((u_time)GetFrameTime()); // TODO make sure cast is ok
+        // Wait((u_time)GetFrameTime()); // TODO make sure cast is ok
         BeginDrawing();
         {
             // Store input data
-            keyPressed = GetKeyPressed();
-            mousePosition = GetMousePosition();
-            mouseGesture = GetGestureDetected();
-            mouseLeftPressed = IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
-            mouseLeftReleased = IsMouseButtonReleased(MOUSE_LEFT_BUTTON);
-            mouseRightPressed = IsMouseButtonPressed(MOUSE_RIGHT_BUTTON);
-            mouseRightReleased = IsMouseButtonReleased(MOUSE_RIGHT_BUTTON);
+            // keyPressed = GetKeyPressed();
+            // mousePosition = GetMousePosition();
+            // mouseGesture = GetGestureDetected();
+            // mouseLeftPressed = IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
+            // mouseLeftReleased = IsMouseButtonReleased(MOUSE_LEFT_BUTTON);
+            // mouseRightPressed = IsMouseButtonPressed(MOUSE_RIGHT_BUTTON);
+            // mouseRightReleased = IsMouseButtonReleased(MOUSE_RIGHT_BUTTON);
 
             ClearBackground(RAYWHITE);
             DrawLineEx((Vector2){800, 0}, (Vector2){800, 600}, 1, LIGHTGRAY);
-            DrawRayGui();
-            DrawConfigPanel();
-            DrawGame();
+            // DrawConfigPanel();
+            TestRayGui(some_text);
+            // DrawGame();
         }
         EndDrawing();
     }
