@@ -30,6 +30,7 @@ typedef struct Interact{
 } Interact;
 
 void DrawInteract(Interact *tr);
+int GuiListViewExDrag(Rectangle bounds, const char **text, int count, int *focus, int *scrollIndex, int active, void (DragGallBack(int)));
 // void SartGui();
 
 #endif

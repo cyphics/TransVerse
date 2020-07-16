@@ -125,7 +125,7 @@ char dependenciesStringToDisplay[MAX_DEPENDENCIES * 35];
 
 char listDependenciesString[MAX_DEPENDENCIES][30];
 int numberDependencies = 0;
-bool isAboutToRemoveDependency = false;
+bool isAboutToRemoveItem = false;
 
 // resource resouresList[MAX_RESOURCES_PER_PRICE];
 // int numberResources = 0;
@@ -443,7 +443,7 @@ void HandleMouseClick()
     if (gesture == GESTURE_DRAG) {
         // Cancel pending actions
         isAboutToSelect = false;
-        isAboutToRemoveDependency = false;
+        isAboutToRemoveItem = false;
         isAboutToAddNewUpgrade = false;
 
         // Check and start dragging upgrade from list

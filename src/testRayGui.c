@@ -1,4 +1,3 @@
-
 #include <raylib.h>
 #define RAYGUI_IMPLEMENTATION
 #include "../lib/raygui/raygui.h"
@@ -25,12 +24,12 @@ const float textRectHeight = 30 * scaleFactor;
 const float maxUpgradeNameLength = 250 * scaleFactor;
 const float selectUpgradeRectWidth = maxUpgradeNameLength;
 
-const float selectMainRectX = anchorX;
-const float selectMainRectY = anchorY;
-const float selectMainRectWidth = selectUpgradeRectWidth + 2 * padding;
-const float selectMainRectHeight = textRectHeight * numUpgrades + padding * (numUpgrades + 1);
+const float upgradesListRectX = anchorX;
+const float upgradesListRectY = anchorY;
+const float upgradesListRectWidth = selectUpgradeRectWidth + 2 * padding;
+const float upgradesListRectHeight = textRectHeight * numUpgrades + padding * (numUpgrades + 1);
 
-const float typeTabWidth = selectMainRectWidth / 4;
+const float typeTabWidth = upgradesListRectWidth / 4;
 const float typeTabHeight = textRectHeight / 2;
 const float structRectX = anchorX;
 const float structRectY = anchorY - textRectHeight/2;
@@ -46,7 +45,7 @@ const float editRectYAnchor = anchorY;
 
 const float editNameRectX          = editRectXAnchor + padding;
 const float editNameRectY          = editRectYAnchor + padding;
-const float editNameRectWidth      = selectMainRectWidth;
+const float editNameRectWidth      = upgradesListRectWidth;
 
 const float editTypeRectX      = editNameRectX + editNameRectWidth + padding;
 const float editTypeRectY      = editRectYAnchor + padding;
@@ -92,7 +91,7 @@ const Rectangle scienceRect   = {scienceRectX, scienceRectY, typeTabWidth, typeT
 const Rectangle incrementRect = {incrementRectX, incrementRectY, typeTabWidth, typeTabHeight};
 const Rectangle softRect      = {softRectX, softRectY, typeTabWidth, typeTabHeight};
 
-Rectangle selectMainRect = {selectMainRectX, selectMainRectY, selectMainRectWidth, selectMainRectHeight};
+Rectangle upgradesListRect = {upgradesListRectX, upgradesListRectY, upgradesListRectWidth, upgradesListRectHeight};
 
 const Rectangle editNameRect = {editNameRectX, editNameRectY, editNameRectWidth, textRectHeight};
 const Rectangle editTypeRect = {editTypeRectX, editTypeRectY, editTypeRectWidth, textRectHeight};
@@ -106,37 +105,31 @@ const Rectangle editAmountRect = {editAmountRectX, editAmountRectY, editAmountRe
 const Rectangle editMainRect = {editMainRectX, editMainRectY, editMainRectWidth, editMainRectHeight};
 
 const Rectangle gameStateRectangle = {anchorX, editMainRect.y + editMainRect.height + padding,
-                                      selectMainRectWidth + editMainRectWidth + padding * 2, 200};
+                                      upgradesListRectWidth + editMainRectWidth + padding * 2, 200};
 const Rectangle saveRect = {gameStateRectangle.x + gameStateRectangle.width - saveWidth,
                             gameStateRectangle.y + gameStateRectangle.height + padding,
                             saveWidth, 30};
 
 
-char str[100] = "Some text";
-char desc[100] = "Some desc";
 int scrollIdx = 10;
 const char *typesList[] = {"science", "incremental", "structure", "software"};
 const char *resourcesList[] = {"energy", "code", "software", "copper", "steel"};
 const char *itemsList[3] = {"One", "Two", "Three"};
 const char *depsList[3] = {"OneD", "TwoD", "ThreeD"};
 int active = 0;
-int newlySelected = 0;
-int selectedDependency = 0;
+int selectedUpgradeId = 0;
+int selectedDependencyId = 0;
 int focus = 0;
 
 int dropTypeActive = 0;
 bool dropTypeEditMode = false;
 int dropResourceActive = 0;
 bool dropResourceEditMode = false;
-int valueBox002Value = 0;
-double increaseValue = 0.0f;
 bool valueBoxEditMode = false;
 
 char dropTypesList[100];
 char dropResourcesList[100];
-int amountValue = 0;
 char amountTxt[100];
-int boughtValue = 0;
 char boughtTxt[100];
 
 upgrade *currentUpgradeToEdit;
@@ -159,6 +152,54 @@ void BuildSelectUpgradesList(char *newTypeList)
 
 }
 
+void SelectCurrentUpgrade(upgrade *original)
+{
+    printf("Selected %d: %s\n", selectedUpgradeId, selectableUpgradesList[selectedUpgradeId]);
+
+    currentUpgradeToEdit = original;
+
+    // numberDependencies = 0;
+    // memset(listDependenciesString, 0, sizeof(listDependenciesString));
+    // for (int i = 0; i < MAX_DEPENDENCIES; ++i) {
+    //     char *dep = original->dependencies[i];
+    //     if (!IsEmpty(dep)) {
+    //         AddDependency(dep);
+    //     }
+    // }
+}
+
+void InitConfig()
+{
+    BuildSelectUpgradesList("structure");
+    SelectCurrentUpgrade(&state.upgrades_list[0]);
+}
+
+void DragDependencyCallback(int dependencyIndex)
+{
+
+    if (CheckCollisionPointRec(GetMousePosition(), editDepRect)) {
+        char *name = selectableUpgradesList[dependencyIndex];
+        printf("Received %s\n", name);
+
+    }
+}
+
+void AddDependency(int dependencyIndex)
+{
+    // Add dependency to the list
+
+    // for (int i = 0; i < numberDependencies; ++i) {
+    //     if (AreStrEquals(listDependenciesString[i], dependency)) return;
+    // }
+
+    // strcat(listDependenciesString[numberDependencies], dependency);
+    // memcpy(currentUpgradeToEdit->dependencies[numberDependencies], dependency, strlen(dependency));
+
+    // numberDependencies++;
+
+    // GenerateDependencyListString();
+}
+
 
 void TestRayGui(char *some_text)
 {
@@ -172,29 +213,41 @@ void TestRayGui(char *some_text)
     if (GuiButton(structRect, "Structure"))      BuildSelectUpgradesList("structure");
     if (GuiButton(softRect, "Software"))         BuildSelectUpgradesList("software");
 
-    // active = GuiListView(selectMainRect, itemsList, &scrollIdx, active);
-    newlySelected = GuiListViewEx(selectMainRect, itemsList, SIZEOF(itemsList), &focus, &scrollIdx, active);
-    if (newlySelected != active && newlySelected >= 0) {
-        printf("Selected %d: %s\n", newlySelected, itemsList[newlySelected]);
-        active = newlySelected;
-    }
-    selectedDependency = GuiListViewEx(editDepRect, depsList, SIZEOF(depsList), &focus, &scrollIdx, active);
+    // active = GuiListView(upgradesListRect, itemsList, &scrollIdx, active);
 
-    if (GuiTextBox(editNameRect, str, 20, CheckCollisionPointRec(mousePos, editNameRect)));
+    selectedDependencyId = GuiListViewEx(editDepRect, depsList, SIZEOF(depsList), &focus, &scrollIdx, active);
 
-    increaseValue = GuiDMValueBox(editIncrRect, increaseValue, 0.0f, 10.0f, 2,
-                                  CheckCollisionPointRec(GetMousePosition(), editIncrRect));
-    // GuiValueBox(Rectangle bounds, const char *text, int *value, int minValue, int maxValue, bool editMode)
-    GuiValueBox(editAmountRect, amountTxt, &amountValue, 0, 1000000,
+    if (GuiTextBox(editNameRect, currentUpgradeToEdit->id, 20, CheckCollisionPointRec(mousePos, editNameRect)));
+
+    currentUpgradeToEdit->increase_factor = GuiDMValueBox(editIncrRect, currentUpgradeToEdit->increase_factor, 0.0f, 10.0f, 2,
+                                                          CheckCollisionPointRec(GetMousePosition(), editIncrRect));
+    GuiValueBox(editAmountRect, amountTxt, &currentUpgradeToEdit->initial_price.resources[0].amount, 0, 1000000,
                 CheckCollisionPointRec(GetMousePosition(), editAmountRect));
-    GuiValueBox(editBoughtRect, boughtTxt, &boughtValue, 0, 1000000,
+    GuiValueBox(editBoughtRect, boughtTxt, &currentUpgradeToEdit->amount_bought, 0, 1000000,
                 CheckCollisionPointRec(GetMousePosition(), editBoughtRect));
 
-    if (GuiTextBoxMulti(editDescRect, desc, 20, CheckCollisionPointRec(mousePos, editDescRect)));
+    if (GuiTextBoxMulti(editDescRect, currentUpgradeToEdit->description, 200, CheckCollisionPointRec(mousePos, editDescRect)));
 
     if (GuiButton(saveRect, "Save"))   SaveGame();
     if (GuiDropdownBox(editResRect, dropResourcesList, &dropResourceActive, dropResourceEditMode))
         dropResourceEditMode = !dropResourceEditMode;
     if (GuiDropdownBox(editTypeRect, dropTypesList, &dropTypeActive, dropTypeEditMode))
         dropTypeEditMode = !dropTypeEditMode;
+
+    // List of selectable upgrades
+    // Must be drawn last so it can draw dragged item over the rest
+    selectedUpgradeId = GuiListViewExDrag(upgradesListRect,
+                                          (const char**)selectableUpgradesList,
+                                          amountSelectableUpgrades,
+                                          &focus, &scrollIdx, active,
+                                          DragDependencyCallback);
+    if (selectedUpgradeId != active && selectedUpgradeId >= 0) {
+        for (int i = 0; i < numUpgrades; ++i) {
+            if (AreStrEquals(selectableUpgradesList[selectedUpgradeId], state.upgrades_list[i].id)) {
+                SelectCurrentUpgrade(&state.upgrades_list[i]);
+            }
+        }
+        active = selectedUpgradeId;
+    }
+
 }

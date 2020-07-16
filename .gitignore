@@ -4,3 +4,5 @@ GTAGS
 TAGS
 build/
 saves/
+/.idea/
+/cmake-build-debug/
