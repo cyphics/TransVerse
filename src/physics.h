@@ -116,13 +116,11 @@ static const time_standards time_std =
 void TimeToStr(char *origin, u_time t);
 
 
-u_time
-RemainingTime(u_distance distance_to_travel,
+u_time RemainingTime(u_distance distance_to_travel,
               u_speed current_speed,
               u_acceleration current_acceleration);
 
-u_distance
-TraveledDistance(u_speed initial_speed,
+u_distance TraveledDistance(u_speed initial_speed,
                  u_time duration,
                  u_acceleration acceleration);
 

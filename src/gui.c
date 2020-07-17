@@ -4,12 +4,8 @@
    $Revision: $
    $Creator: Thierry Raeber$
    ======================================================================== */
-#include <raylib.h>
-#include <stb/stb.h>
 
-// #include "gui_config.c"
-#include "testRayGui.c"
-#include "gui_game.c"
+
 
 const int screenWidth = 1600;
 const int screenHeight = 600;
@@ -34,7 +30,7 @@ bool mouseRightPressed;
 bool mouseRightReleased;
 
 char some_text[100];
-void SartGui()
+void StartGui()
 {
 
     SetTargetFPS(60);

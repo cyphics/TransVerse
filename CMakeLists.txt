@@ -8,7 +8,7 @@ set(CMAKE_C_STANDARD 11)
 # find_package(Catch2 REQUIRED)
 
 file(GLOB SOURCES "src/main.c")
-#file(GLOB TEST_SOURCES "test/*.cpp")
+file(GLOB TEST_SOURCES "tests/*.c")
 
 
 add_executable(TransVerse ${SOURCES})

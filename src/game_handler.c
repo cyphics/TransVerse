@@ -5,9 +5,7 @@
    $Creator: Thierry Raeber$
    ======================================================================== */
 
-#include "storage.h"
-#include "game_debug.h"
-#include "game_handler.h"
+#include "includes.c"
 
 extern GameState state;
 extern char *CONFIG_FILE;
@@ -139,4 +137,12 @@ void Wait(u_time elapsed_time)
                                                 state.current_acceleration);
     // gather resources
     // update state ?
+}
+
+void StartGame()
+{
+    // CreateFirstXmlFile();
+    if (LoadGame()) {
+        StartGui();
+    }
 }
