@@ -21,8 +21,11 @@ build()
 
 build_cmake()
 {
+    if [ ! -d "build" ]; then
+        mkdir build
+    fi
     cd build/
-    cmake ../
+    cmake -Wno-dev ../
     if cmake --build .
     then
         compiled=true
@@ -38,7 +41,9 @@ echo ""
 echo "Program compiled in $elapsed_compile"
 
 if [ "$compiled" = true ]; then
-    ./TransVerse
+    echo
+    ../build/tests/test_suite
+    #./TransVerse
 fi
 
 # ./tests
