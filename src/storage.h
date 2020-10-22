@@ -8,6 +8,14 @@
 #if !defined(STORAGE_H)
 
 #define STORAGE_H
+
+#include <stdbool.h>
+#include <string.h>
+#include <stdio.h>
+#include "game.h"
+
+char *CONFIG_FILE = "../../saves/config.xml";
+
 char *GetXmlSegment(char receiver[], char xml_code[], char *entry);
 void SaveUpgrades(char *output, upgrade *up_list);
 void SaveResources(char *output, resource *res_list);

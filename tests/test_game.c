@@ -1,17 +1,14 @@
-// Reference: https://libcheck.github.io/check/doc/check_html/index.html
 
-#include <config.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <check.h>
 
-
-void setup(void)
+static void setup(void)
 {
 
 }
 
-void teardown(void)
+static void teardown(void)
 {
 
 }
@@ -21,8 +18,9 @@ START_TEST (test_name)
 {
     ck_assert_int_eq(5, 5);
 }
-
 END_TEST
+
+
 
 Suite * game_suite(void)
 {
@@ -44,17 +42,4 @@ Suite * game_suite(void)
 }
 
 
-int main(void)
-{
-    int number_failed;
-    Suite *s;
-    SRunner *sr;
 
-    s = game_suite();
-    sr = srunner_create(s);
-
-    srunner_run_all(sr, CK_NORMAL);
-    number_failed = srunner_ntests_failed(sr);
-    srunner_free(sr);
-    return (number_failed == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
-}

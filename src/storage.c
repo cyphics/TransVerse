@@ -1,4 +1,3 @@
-
 /* ========================================================================
    $File: $
    $Date: $
@@ -6,7 +5,7 @@
    $Creator: Thierry Raeber$
    ======================================================================== */
 
-char *CONFIG_FILE = "../saves/config.xml";
+#include "storage.h"
 
 char *GetXmlSegment(char receiver[], char xml_code[], char *entry)
 {
@@ -223,7 +222,7 @@ bool LoadGameFromFile(char *file_path, GameState *state)
 {
     FILE *fptr = fopen(file_path, "r");
     if (fptr == NULL) {
-        printf ("File failed to open\n");
+        printf ("File %s failed to open\n", file_path);
         return false;
     }
 

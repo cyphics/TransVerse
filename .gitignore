@@ -6,3 +6,4 @@ build/
 saves/
 /.idea/
 /cmake-build-debug/
+CMakeFiles/

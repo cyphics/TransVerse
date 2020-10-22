@@ -5,36 +5,16 @@
    $Creator: Thierry Raeber$
    ======================================================================== */
 
+#include "gui.h"
 
 
-const int screenWidth = 1600;
-const int screenHeight = 600;
-
-// Hover animation
-const float gradWidth = 30.0f;
-const float gradHeight = 30.0f;
-const int hoverLength = 6; // In frames
-Rectangle staticRect = {0, 0, gradWidth, gradHeight};
-Texture2D gradientTexture;
-Color hovered = LIGHTGRAY;
-Color unhovered = RAYWHITE;
-
-int framesCounter = 0;
-
-Vector2 mousePosition;
-int mouseGesture;
-int keyPressed;
-bool mouseLeftPressed;
-bool mouseLeftReleased;
-bool mouseRightPressed;
-bool mouseRightReleased;
 
 char some_text[100];
 void StartGui()
 {
 
     SetTargetFPS(60);
-    InitWindow(screenWidth, screenHeight, "Transverse");
+    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Transverse");
     Image grad = GenImageGradientH(gradWidth, gradHeight, hovered, unhovered);
     gradientTexture = LoadTextureFromImage(grad);
     UnloadImage(grad);

@@ -12,7 +12,7 @@ link_directories(${CHECK_LIBRARY_DIRS})
 
 set(TEST_SOURCES
   test_game.c
-)
+        test_storage.c test_main.c test_storage.h)
 
 add_executable(test_suite ${TEST_SOURCES})
 target_link_libraries(test_suite game ${CHECK_LIBRARIES})

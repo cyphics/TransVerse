@@ -4,13 +4,12 @@
    $Revision: $
    $Creator: Thierry Raeber $
    ======================================================================== */
-#if !defined(EDIT_MODE_H)
-#define EDIT_MODE_H
+#if !defined(TEST_MAIN_H)
 
-#include "gui.h"
-#include "game.h"
+#include  "types.h"
 
-void DrawConfigPanel(float panelWidth, float panelHeight);
-//void DrawInteract(Interact tr);
+#define TEST_MAIN_H
+
+void run_tests();
 
 #endif

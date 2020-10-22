@@ -1,4 +1,3 @@
-#if !defined(PHYSICS_H)
 /* ========================================================================
    $File: $
    $Date: $
@@ -6,6 +5,7 @@
    $Creator: Thierry Raeber $
    ======================================================================== */
 
+#if !defined(PHYSICS_H)
 #define PHYSICS_H
 
 #include "types.h"

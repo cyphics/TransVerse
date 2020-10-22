@@ -1,13 +1,12 @@
-/* ========================================================================
-   $File: $
-   $Date: $
-   $Revision: $
-   $Creator: Thierry Raeber $
-   ======================================================================== */
+//
+// Created by cyphics on 7/19/20.
+//
 
-#if !defined(GAME_H)
+#ifndef TRANSVERSE_GAME_H
+#define TRANSVERSE_GAME_H
+
 #include "types.h"
-#define GAME_H
+
 
 #define MAX_UPGRADES_AMOUNT 30
 #define MAX_RESOURCES_AMOUNT 5
@@ -51,4 +50,4 @@ typedef struct GameState{
 GameState state; // Original one
 GameState BuildGameConfig(const upgrade up_list[], int number_upgrades, const resource res_list[], int number_resources);
 
-#endif
+#endif //TRANSVERSE_GAME_H

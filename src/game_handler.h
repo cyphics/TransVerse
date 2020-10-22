@@ -8,7 +8,8 @@
 #if !defined(GAME_HANDLER_H)
 #define GAME_HANDLER_H
 
-#include "physics.h"
+
+#include <stdbool.h>
 #include "game.h"
 
 typedef void *UPGRADE;
@@ -38,5 +39,6 @@ void GetInfo(UPGRADE handle, UpgradeInfo *info);
 bool LoadGame();
 void SaveGame();
 void Wait(double elapsed_time);
+void StartGame();
 
 #endif

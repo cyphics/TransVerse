@@ -5,13 +5,14 @@
    $Creator: Thierry Raeber$
    ======================================================================== */
 
-#include "includes.c"
-
-extern GameState state;
-extern char *CONFIG_FILE;
-// UPGRADE available_upgrades[MAX_UPGRADES_AMOUNT] = {};
-// UPGRADE affordable_upgrades[MAX_UPGRADES_AMOUNT] = {};
-
+#include <string.h>
+#include <stdio.h>
+#include "game_handler.h"
+#include "helper.h"
+#include "game_debug.h"
+#include "storage.h"
+#include "physics.h"
+#include "gui.h"
 
 HandleList AvailableUpgrades;
 

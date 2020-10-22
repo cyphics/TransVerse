@@ -5,6 +5,8 @@
    $Creator: Thierry Raeber$
    ======================================================================== */
 
+#include "game_debug.h"
+
 const static upgrade u1 = { "Terminal", "structure", "another desc", {{"energy", 10}}, 1.2, 0, {} };
 const static upgrade u2 = { "Quantum Generator", "science", "a desc", {}, 1.2, 0, {"Terminal"} };
 const static upgrade u3 = { "Quantum Throttle", "structure", "blah", {}, 1.4, 0, {"Terminal", "Quantum Generator"} };

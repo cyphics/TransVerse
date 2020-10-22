@@ -2,11 +2,7 @@
 
 #include "../lib/raygui/raygui.h"
 
-#include "game.h"
-#include "types.h"
-#include "helper.h"
-#include "gui.h"
-#include "game_handler.h"
+
 
 #define numUpgrades  MAX_UPGRADES_AMOUNT
 

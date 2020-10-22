@@ -6,6 +6,7 @@
    ======================================================================== */
 
 #include <raylib.h>
+#include <stdio.h>
 
 const char message[128] = "This sample illustrates a text writing\nanimation effect! Check it out! ;)";
 int lines = 0;
@@ -20,7 +21,7 @@ float editorAnchorX, editorAnchorY;
 Rectangle codeContainer;
 int codeFontSize = 10;
 int codeFontPadding = 2;
-char buffer[200000];
+char fileBuffer[200000];
 int codePosition = 0;
 int textStep = 1;
 
@@ -32,7 +33,7 @@ void OpenFile(char *filename)
     } else printf("File loaded successfully\n");
     if (fp) {
         while ((symbol = getc(fp)) != EOF) {
-            strcat(buffer, &symbol);
+            strcat(fileBuffer, &symbol);
         }
         fclose(fp);
     }
@@ -57,7 +58,7 @@ void TypeCode()
     if (IsKeyPressed(KEY_ENTER)) codePosition = 0;
     if (IsKeyPressed(KEY_SPACE)) textStep++;
 
-    const char *textToDraw = TextSubtext(buffer, 0, codePosition);
+    const char *textToDraw = TextSubtext(fileBuffer, 0, codePosition);
 
     DrawText(textToDraw, editorAnchorX + padding, editorAnchorY + padding, codeFontSize, textColorBack);
 

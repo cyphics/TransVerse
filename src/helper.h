@@ -7,6 +7,8 @@
 #if !defined(HELPER_H)
 #define HELPER_H
 
+#include <stdbool.h>
+
 #define SIZEOF(A) (sizeof(A)/sizeof(A[0]))
 
 typedef struct Timer
