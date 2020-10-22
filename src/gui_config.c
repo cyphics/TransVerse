@@ -5,25 +5,35 @@
    $Creator: Thierry Raeber$
    ======================================================================== */
 #include <raylib.h>
-#include "gui_config.h"
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
 
+#include "gui_config.h"
 #include "helper.h"
 #include "game_handler.h"
 #include "gui.h"
 #include "gui_constants.h"
+#include "storage.h"
 
-extern char *CONFIG_FILE;
+GameState game_state = {};
 Font font;
+float fontSize = FONT_SIZE;
+Vector2 mousePosition;
+int keyPressed;
+
+//extern struct GameState game_state;
 
 //const float FONT_SIZE = defaultFontSize * SCALE_FACTOR;
-#define numUpgrades  MAX_UPGRADES_AMOUNT
+const int numUpgrades =  MAX_UPGRADES_AMOUNT;
 
-const float anchorX = 20 * SCALE_FACTOR, anchorY = 20 * SCALE_FACTOR;
+const float anchorX = 20 * SCALE_FACTOR;
+const float anchorY = 20 * SCALE_FACTOR;
 
 // Common
 bool initDone = false;
 
-
+bool isAboutToRemoveDependency;
 char currentUpgradeIncreaseString[6];
 char currentUpgradeAmountString[10];
 char currentUpgradeBoughtString[10];
@@ -66,25 +76,21 @@ bool isAboutToRemoveUpgrade = false;
 
 char *currentTypeList = "structure";
 int amountSelectableUpgrades = 0;
-Interact selectUpgradesList[numUpgrades] = {};
+Interact selectUpgradesList[MAX_UPGRADES_AMOUNT] = {};
 bool isAboutToSelect = false;
 
 // Upgrade edit panel
 upgrade *currentUpgradeToEdit;
 
-const float displayRectXAnchor = anchorX + MAX_UPGRADE_NAME_LENGTH + 20 * SCALE_FACTOR;
-const float displayRectYAnchor = anchorY;
-const Rectangle displayNameRect = {displayRectXAnchor + PADDING,
-                                   displayRectYAnchor + PADDING,
-                                   selectMainRectWidth, TEXT_RECT_HEIGHT};
-const Rectangle displayTypeRect;
-const Rectangle displayIncreaseRect;
-const Rectangle displayDescRect;
-const Rectangle displayDependRect;
-const Rectangle displayResourceRect;
-const Rectangle displayAmountRect;
-const Rectangle displayBoughtRect ;
-const Rectangle displayMainRect;
+Rectangle displayNameRect;
+Rectangle displayTypeRect;
+Rectangle displayIncreaseRect;
+Rectangle displayDescRect;
+Rectangle displayDependRect;
+Rectangle displayResourceRect;
+Rectangle displayAmountRect;
+Rectangle displayBoughtRect;
+Rectangle displayMainRect;
 
 Interact editNameInteract;
 Interact editTypeInteract;
@@ -108,23 +114,13 @@ bool isAboutToRemoveItem = false;
 
 
 char dropDownMenuResult[30] = {};
-const char *typesList[] = {"science", "incremental", "structure", "software"};
-const char *resourcesList[] = {"energy", "code", "software", "copper", "steel"};
+char *typesList[] = {"science", "incremental", "structure", "software"};
+char *resourcesList[] = {"energy", "code", "software", "copper", "steel"};
 
-const Rectangle gameStateRectangle = {anchorX, displayMainRect.y + displayMainRect.height + PADDING,
-                                      selectMainRectWidth + displayMainRectWidth + PADDING * 2, 200
-};
-
-const Rectangle speedRect = {gameStateRectangle.x + PADDING,
-                             gameStateRectangle.y + PADDING,
-                             60 * SCALE_FACTOR,
-                             TEXT_RECT_HEIGHT};
-Interact speedInteract = {"speed", "Speed", speedRect, "", false, true, .fontSize = defaultFontSize};
-
-const float saveWidth = 100;
-const Rectangle saveRect = {gameStateRectangle.x + gameStateRectangle.width - saveWidth,
-                            gameStateRectangle.y + gameStateRectangle.height + PADDING,
-                            saveWidth, 30};
+Rectangle gameStateRectangle;
+Rectangle speedRect;
+Interact speedInteract;
+Rectangle saveRect;
 
 Interact *editFieldsList[] = {&editNameInteract,
                               &editTypeInteract,
@@ -168,23 +164,23 @@ void BuildSelectUpgradesList(char *newTypeList) {
     amountSelectableUpgrades = 0;
     memset(selectUpgradesList, 0, sizeof(selectUpgradesList));
     for (int i = 0; i < numUpgrades; ++i) {
-        if (AreStrEquals(state.upgrades_list[i].type, currentTypeList)) {
+        if (AreStrEquals(game_state.upgrades_list[i].type, currentTypeList)) {
             Rectangle r = {anchorX + PADDING,
                            anchorY + PADDING + (TEXT_RECT_HEIGHT + PADDING) * amountSelectableUpgrades,
                            selectUpgradeRectWidth, TEXT_RECT_HEIGHT};
 
             Interact inter = {};
             inter.rect = r;
-            inter.text = state.upgrades_list[i].id;
+            inter.text = game_state.upgrades_list[i].id;
             inter.isHoverable = true;
             inter.isEditable = false;
-            inter.fontSize = defaultFontSize;
+            inter.fontSize = fontSize;
             selectUpgradesList[amountSelectableUpgrades] = inter;
             amountSelectableUpgrades++;
         }
     }
-    selectMainRect.height = (TEXT_RECT_HEIGHT + PADDING) * amountSelectableUpgrades + 2 * PADDING;
-    addUpgradeButton.y = selectMainRect.y + selectMainRect.height + PADDING;
+//    selectMainRect.height = (TEXT_RECT_HEIGHT + PADDING) * amountSelectableUpgrades + 2 * PADDING;
+    addUpgradeButton.y = anchorY + (TEXT_RECT_HEIGHT + PADDING) * amountSelectableUpgrades + 2 * PADDING + PADDING;
 }
 
 void GenerateDependencyListString() {
@@ -232,9 +228,9 @@ void RemoveDependency() {
 
 void AddNewUpgrade() {
     for (int i = 0; i < numUpgrades; ++i) {
-        if (IsEmpty(state.upgrades_list[i].id)) {
-            memcpy(state.upgrades_list[i].id, "New upgrade", strlen("New ugprade"));
-            memcpy(state.upgrades_list[i].type, currentTypeList, strlen(currentTypeList));
+        if (IsEmpty(game_state.upgrades_list[i].id)) {
+            memcpy(game_state.upgrades_list[i].id, "New upgrade", strlen("New ugprade"));
+            memcpy(game_state.upgrades_list[i].type, currentTypeList, strlen(currentTypeList));
             break; // Avoid create new upgrade on all empty slots
         }
     }
@@ -244,7 +240,7 @@ void AddNewUpgrade() {
 void RemoveUpgrade() {
     int selectUpIdx = 0;
     for (int i = 0; i < numUpgrades; ++i) {
-        upgrade *u = &state.upgrades_list[i];
+        upgrade *u = &game_state.upgrades_list[i];
         if (AreStrEquals(u->type, currentTypeList)) {
             if (selectUpgradesList[selectUpIdx].isHovered) {
                 *u = (upgrade) {0};
@@ -332,13 +328,13 @@ void DrawDropDownMenu() {
 
 void DrawGameState() {
     char speedStr[20];
-    sprintf(speedStr, "%d", state.current_speed);
+    sprintf(speedStr, "%d", game_state.current_speed);
     speedInteract.text = speedStr;
     // DrawInteract(&speedInteract);
     DrawRectangleLinesEx(gameStateRectangle, 2, BLACK);
 
     char elapsedTime[20];
-    sprintf(elapsedTime, "Elapsed time: %.1f", state.elapsed_time);
+    sprintf(elapsedTime, "Elapsed time: %.1f", game_state.elapsed_time);
 }
 
 void DrawStaticContent() {
@@ -417,7 +413,7 @@ void HandleMouseClick() {
                 Rectangle rec = selectUpgradesList[i].rect;
                 if (CheckCollisionPointRec(mousePosition, rec)) {
                     isDragging = true;
-                    dragedUpgrade = &state.upgrades_list[i];
+                    dragedUpgrade = &game_state.upgrades_list[i];
                     draggedUpdateSprite.text = dragedUpgrade->id;
                 }
             }
@@ -442,8 +438,8 @@ void HandleMouseClick() {
                 Rectangle rec = selectUpgradesList[i].rect;
                 if (CheckCollisionPointRec(mousePosition, rec)) {
                     for (int j = 0; j < numUpgrades; ++j) {
-                        if (AreStrEquals(selectUpgradesList[i].text, state.upgrades_list[j].id)) {
-                            SelectCurrentUpgrade(&state.upgrades_list[j]);
+                        if (AreStrEquals(selectUpgradesList[i].text, game_state.upgrades_list[j].id)) {
+                            SelectCurrentUpgrade(&game_state.upgrades_list[j]);
                         }
                     }
                 }
@@ -567,10 +563,10 @@ void initiateUI() {
     buildUI();
 
     BuildSelectUpgradesList("structure");
-    SelectCurrentUpgrade(&state.upgrades_list[0]);
+    SelectCurrentUpgrade(&game_state.upgrades_list[0]);
     font = GetFontDefault();
     for (int i = 0; i < sizeof(editFieldsList) / sizeof(editFieldsList[0]); ++i) {
-        editFieldsList[i]->fontSize = defaultFontSize;
+        editFieldsList[i]->fontSize = fontSize;
     }
     initDone = true;
 }
@@ -578,40 +574,56 @@ void initiateUI() {
 void buildUI() {
     float displayRectXAnchor = anchorX + MAX_UPGRADE_NAME_LENGTH + 20 * SCALE_FACTOR;
     float displayRectYAnchor = anchorY;
-    displayNameRect = {displayRectXAnchor + PADDING,
-                                       displayRectYAnchor + PADDING,
-                                       selectMainRectWidth, TEXT_RECT_HEIGHT};
-    displayTypeRect = {displayNameRect.x + displayNameRect.width + PADDING,
-                                       displayRectYAnchor + PADDING, 130 * SCALE_FACTOR, TEXT_RECT_HEIGHT};
-    displayIncreaseRect = {displayTypeRect.x + displayTypeRect.width + PADDING,
-                                           displayRectYAnchor + PADDING, 50 * SCALE_FACTOR, TEXT_RECT_HEIGHT};
-    displayDescRect = {displayRectXAnchor + PADDING, displayRectYAnchor + PADDING + 40 * SCALE_FACTOR,
-                                       displayNameRect.width + displayTypeRect.width + displayIncreaseRect.width +
-                                       2 * PADDING, TEXT_RECT_HEIGHT * 2};
-    displayDependRect = {displayRectXAnchor + PADDING,
-                                         displayDescRect.y + displayDescRect.height + PADDING,
-                                         displayNameRect.width, TEXT_RECT_HEIGHT};
-    displayResourceRect = {displayTypeRect.x,
-                                           displayDependRect.y,
-                                           displayTypeRect.width, TEXT_RECT_HEIGHT};
-    displayAmountRect = {displayIncreaseRect.x,
-                                         displayDependRect.y,
-                                         displayIncreaseRect.width, TEXT_RECT_HEIGHT};
-    displayBoughtRect = {displayResourceRect.x,
-                                         displayDependRect.y + displayDependRect.height + PADDING * 2,
-                                         50, displayNameRect.height};
-    displayMainRectWidth =
-            displayNameRect.width + displayTypeRect.width + displayIncreaseRect.width + 4 * PADDING;
-    displayMainRectHeight = 300.0f * SCALE_FACTOR;
-    displayMainRect = {displayRectXAnchor, displayRectYAnchor,
-                                       displayMainRectWidth, displayMainRectHeight};
 
-    editNameInteract = (Interact){"name", "name", displayNameRect, "", false, true};
-    editTypeInteract = (Interact){"type", "type", displayTypeRect, "", false, false};
-    editIncreaseInteract = (Interact){"increase", "increase", displayIncreaseRect, "", false, true};
-    editDescInteract = (Interact){"description", "description", displayDescRect, "", false, true};
-    editDependenciesInteract = (Interact){"dependencies", "dependencies", displayDependRect, "", false, false};
-    editResourceInteract = (Interact){"resource", "resource", displayResourceRect, "", false, false};
-    editAmountInteract = (Interact){"amount", "amount", displayAmountRect, "", false, true};
-    editBoughtInteract = (Interact){"bought", "bought", displayBoughtRect, "", false, true};
+    displayNameRect = (Rectangle) {displayRectXAnchor + PADDING,
+                                   displayRectYAnchor + PADDING,
+                                   selectMainRectWidth, TEXT_RECT_HEIGHT};
+    displayTypeRect = (Rectangle) {displayNameRect.x + displayNameRect.width + PADDING,
+                                   displayRectYAnchor + PADDING, 130 * SCALE_FACTOR, TEXT_RECT_HEIGHT};
+    displayIncreaseRect = (Rectangle) {displayTypeRect.x + displayTypeRect.width + PADDING,
+                                       displayRectYAnchor + PADDING, 50 * SCALE_FACTOR, TEXT_RECT_HEIGHT};
+    displayDescRect = (Rectangle) {displayRectXAnchor + PADDING, displayRectYAnchor + PADDING + 40 * SCALE_FACTOR,
+                                   displayNameRect.width + displayTypeRect.width + displayIncreaseRect.width +
+                                   2 * PADDING, TEXT_RECT_HEIGHT * 2};
+    displayDependRect = (Rectangle) {displayRectXAnchor + PADDING,
+                                     displayDescRect.y + displayDescRect.height + PADDING,
+                                     displayNameRect.width, TEXT_RECT_HEIGHT};
+    displayResourceRect = (Rectangle) {displayTypeRect.x,
+                                       displayDependRect.y,
+                                       displayTypeRect.width, TEXT_RECT_HEIGHT};
+    displayAmountRect = (Rectangle) {displayIncreaseRect.x,
+                                     displayDependRect.y,
+                                     displayIncreaseRect.width, TEXT_RECT_HEIGHT};
+    displayBoughtRect = (Rectangle) {displayResourceRect.x,
+                                     displayDependRect.y + displayDependRect.height + PADDING * 2,
+                                     50, displayNameRect.height};
+    float displayMainRectWidth =
+            displayNameRect.width + displayTypeRect.width + displayIncreaseRect.width + 4 * PADDING;
+    float displayMainRectHeight = 300.0f * SCALE_FACTOR;
+    displayMainRect = (Rectangle) {displayRectXAnchor, displayRectYAnchor,
+                                   displayMainRectWidth, displayMainRectHeight};
+
+    editNameInteract = (Interact) {"name", "name", displayNameRect, "", false, true};
+    editTypeInteract = (Interact) {"type", "type", displayTypeRect, "", false, false};
+    editIncreaseInteract = (Interact) {"increase", "increase", displayIncreaseRect, "", false, true};
+    editDescInteract = (Interact) {"description", "description", displayDescRect, "", false, true};
+    editDependenciesInteract = (Interact) {"dependencies", "dependencies", displayDependRect, "", false, false};
+    editResourceInteract = (Interact) {"resource", "resource", displayResourceRect, "", false, false};
+    editAmountInteract = (Interact) {"amount", "amount", displayAmountRect, "", false, true};
+    editBoughtInteract = (Interact) {"bought", "bought", displayBoughtRect, "", false, true};
+
+    gameStateRectangle = (Rectangle) {anchorX, displayMainRect.y + displayMainRect.height + PADDING,
+                                      selectMainRectWidth + displayMainRectWidth + PADDING * 2, 200
+    };
+
+    speedRect = (Rectangle) {gameStateRectangle.x + PADDING,
+                             gameStateRectangle.y + PADDING,
+                             60 * SCALE_FACTOR,
+                             TEXT_RECT_HEIGHT};
+    speedInteract = (Interact) {"speed", "Speed", speedRect, "", false, true, .fontSize = fontSize};
+
+    const float saveWidth = 100;
+    saveRect = (Rectangle) {gameStateRectangle.x + gameStateRectangle.width - saveWidth,
+                            gameStateRectangle.y + gameStateRectangle.height + PADDING,
+                            saveWidth, 30};
 }

@@ -6,6 +6,7 @@
    ======================================================================== */
 
 #include "game_debug.h"
+#include "storage.h"
 
 const static upgrade u1 = { "Terminal", "structure", "another desc", {{"energy", 10}}, 1.2, 0, {} };
 const static upgrade u2 = { "Quantum Generator", "science", "a desc", {}, 1.2, 0, {"Terminal"} };
@@ -27,8 +28,6 @@ const static resource r3 = { "Energy", 10 };
 
 const static upgrade init_upgrade_list[MAX_UPGRADES_AMOUNT] = {u1, u2, u3, u4, u5, u6, u7, u8, u9, u10, u11, u12, u13};
 const static resource init_resources_list[MAX_RESOURCES_AMOUNT] = {r1, r2, r3};
-
-extern char *CONFIG_FILE;
 
 void CreateFirstXmlFile()
 {

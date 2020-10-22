@@ -47,7 +47,7 @@ typedef struct GameState{
     resource resources_list[MAX_RESOURCES_AMOUNT];
 } GameState;
 
-GameState state; // Original one
+extern GameState game_state; // Original one
 GameState BuildGameConfig(const upgrade up_list[], int number_upgrades, const resource res_list[], int number_resources);
 
 #endif //TRANSVERSE_GAME_H

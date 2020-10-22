@@ -19,8 +19,8 @@ HandleList AvailableUpgrades;
 upgrade *GetUpgradeFromName(char *name)
 {
     for (int i = 0; i < MAX_UPGRADES_AMOUNT; i++) {
-        if (AreStrEquals(state.upgrades_list[i].id, name)) {
-            return &state.upgrades_list[i];
+        if (AreStrEquals(game_state.upgrades_list[i].id, name)) {
+            return &game_state.upgrades_list[i];
         }
     }
     return NULL;
@@ -80,7 +80,7 @@ void UpdateAvailableUpgrades()
 
     AvailableUpgrades.size = 0;
     for (int i = 0; i < MAX_UPGRADES_AMOUNT; i++) {
-        upgrade *up = &state.upgrades_list[i];
+        upgrade *up = &game_state.upgrades_list[i];
         if (!IsEmpty(up->id) && IsBuyable(up) && AreDependenciesMet(up)){
             AvailableUpgrades.list[AvailableUpgrades.size++] = up;
         }
@@ -113,7 +113,7 @@ void GetInfo(UPGRADE handle, UpgradeInfo *info)
 
 bool LoadGame()
 {
-    bool result = LoadGameFromFile(CONFIG_FILE, &state);
+    bool result = LoadGameFromFile(CONFIG_FILE, &game_state);
     if (result) {
         UpdateAvailableUpgrades();
         UpdateAffordableUpgrades();
@@ -125,17 +125,17 @@ bool LoadGame()
 
 void SaveGame()
 {
-    SaveGameToDisk(CONFIG_FILE, &state);
+    SaveGameToDisk(CONFIG_FILE, &game_state);
     printf("Game saved!\n");
 }
 
 void Wait(u_time elapsed_time)
 {
-    state.elapsed_time += elapsed_time;
+    game_state.elapsed_time += elapsed_time;
     // compute and set new speed
-    state.traveled_distance += TraveledDistance(state.current_speed,
-                                                elapsed_time,
-                                                state.current_acceleration);
+    game_state.traveled_distance += TraveledDistance(game_state.current_speed,
+                                                     elapsed_time,
+                                                     game_state.current_acceleration);
     // gather resources
     // update state ?
 }

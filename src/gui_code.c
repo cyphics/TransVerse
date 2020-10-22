@@ -7,6 +7,7 @@
 
 #include <raylib.h>
 #include <stdio.h>
+#include "gui_constants.h"
 
 const char message[128] = "This sample illustrates a text writing\nanimation effect! Check it out! ;)";
 int lines = 0;
@@ -60,6 +61,6 @@ void TypeCode()
 
     const char *textToDraw = TextSubtext(fileBuffer, 0, codePosition);
 
-    DrawText(textToDraw, editorAnchorX + padding, editorAnchorY + padding, codeFontSize, textColorBack);
+    DrawText(textToDraw, editorAnchorX + PADDING, editorAnchorY + PADDING, codeFontSize, textColorBack);
 
 }

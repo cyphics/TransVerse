@@ -14,7 +14,7 @@
 #include <stdio.h>
 #include "game.h"
 
-char *CONFIG_FILE = "../../saves/config.xml";
+extern char *CONFIG_FILE;
 
 char *GetXmlSegment(char receiver[], char xml_code[], char *entry);
 void SaveUpgrades(char *output, upgrade *up_list);

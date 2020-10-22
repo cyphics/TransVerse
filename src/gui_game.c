@@ -226,7 +226,7 @@ void InitGameUI()
                                   800 - PADDING * 2, 500 - PADDING * 2};
     subPanelRect = (Rectangle){interfaceAnchorX + PADDING, interfaceAnchorY + PADDING + tabHeight + PADDING * 2,
                     800 - PADDING * 2, 560 - PADDING * 2};
-    Rectangle terminal = {mainPanelRect.x + PADDING,
+    Rectangle terminalRect = {mainPanelRect.x + PADDING,
                           mainPanelRect.y + PADDING,
                               100, tabHeight};
     terminalTab = (Interact){"termTab", "", terminalRect, "Terminal", true};

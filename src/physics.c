@@ -6,7 +6,8 @@
    ======================================================================== */
 
 #include <math.h>
-
+#include "types.h"
+#include "physics.h"
 
 char *AddTimeInString(long abs_value, long std_value)
 {

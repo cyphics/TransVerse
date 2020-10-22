@@ -6,7 +6,7 @@
 #include <stdint.h>
 #include <check.h>
 // #include "game.h"
-#include "includes.c"
+//#include "includes.c"
 
 static void setup(void)
 {

@@ -13,10 +13,10 @@ bool isGameGuiInit = false;
 const float interfaceAnchorX = 800.0f;
 const float interfaceAnchorY = 0;
 
-extern GameState state;
+//extern GameState state;
 extern HandleList AvailableUpgrades;
 extern Vector2 mousePosition;
-extern bool mouseLeftPressed;
+bool mouseLeftPressed = false;
 
 int currentPanel = EDITOR_TAB;
 
