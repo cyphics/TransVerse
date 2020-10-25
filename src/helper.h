@@ -21,5 +21,7 @@ typedef struct Timer
 
 bool AreStrEquals(char *ch1, char *ch2);
 bool IsEmpty(char *str);
+bool IsStringValidFloat(char *str);
+float StringToFloat(char *str);
 
 #endif

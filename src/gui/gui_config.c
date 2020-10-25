@@ -10,13 +10,11 @@
 #include <stdlib.h>
 
 #include "gui_config.h"
-#include "helper.h"
-#include "game_handler.h"
+#include "../helper.h"
 #include "gui.h"
 #include "gui_constants.h"
-#include "storage.h"
+#include "gui_tools.h"
 
-GameState game_state = {};
 Font font;
 float fontSize = FONT_SIZE;
 Vector2 mousePosition;
@@ -24,11 +22,30 @@ int keyPressed;
 
 //extern struct GameState game_state;
 
-//const float FONT_SIZE = defaultFontSize * SCALE_FACTOR;
-const int numUpgrades =  MAX_UPGRADES_AMOUNT;
+float anchorX;
+float anchorY;
 
-const float anchorX = 20 * SCALE_FACTOR;
-const float anchorY = 20 * SCALE_FACTOR;
+Rectangle configTabRect;
+char *configTabEntries[2] = {"Config", "Cheat"};
+int configTabSelectedEntry = 1;
+
+// CHEAT TAB
+Rectangle speedCheatLabelRect;
+Rectangle speedCheatEditRect;
+Rectangle speedCheatSetRect;
+Rectangle speedCheatAddRect;
+char speedCheatString[64] = "0";
+bool speedCheatEditMode = false;
+
+Rectangle accelerationCheatLabelRect;
+Rectangle accelerationCheatEditRect;
+Rectangle accelerationCheatSetRect;
+Rectangle accelerationCheatAddRect;
+char accelerationCheatString[64] = "0";
+bool accelerationCheatEditMode = false;
+
+//const float FONT_SIZE = defaultFontSize * SCALE_FACTOR;
+const int numUpgrades = MAX_UPGRADES_AMOUNT;
 
 // Common
 bool initDone = false;
@@ -69,8 +86,7 @@ const float selectTypeTabWidth = selectMainRectWidth / 4;
 //                             selectMainRectWidth, selectMainRectHeight};
 
 const float addButtonWidth = 20;
-Rectangle addUpgradeButton = {anchorX, 0,
-                              addButtonWidth, addButtonWidth};
+Rectangle addUpgradeButton;
 bool isAboutToAddNewUpgrade = false;
 bool isAboutToRemoveUpgrade = false;
 
@@ -252,39 +268,6 @@ void RemoveUpgrade() {
     }
 }
 
-void AddResource(resource res) {
-
-}
-
-void RemoveResource() {
-
-}
-
-
-void OpenDropDownMenu(char *target, const char **items_list, int num_items, float anchorX, float anchorY) {
-    // Set width of selector
-    float width = 0;
-    float length = 0;
-    for (int i = 0; i < num_items; ++i) {
-        length = MeasureText(items_list[i], FONT_SIZE);
-        if (length > width) width = length;
-    }
-    width += PADDING * 2;
-
-    DropDownMenu.destination = target;
-    DropDownMenu.items_list = items_list;
-    DropDownMenu.num_items = num_items;
-    DropDownMenu.rect = (Rectangle) {anchorX, anchorY, width, TEXT_RECT_HEIGHT * num_items};
-    DropDownMenu.visible = true;
-}
-
-void CloseDropDownMenu() {
-    int item_idx = (mousePosition.y - DropDownMenu.rect.y) / TEXT_RECT_HEIGHT;
-    memset(DropDownMenu.destination, 0, sizeof(currentUpgradeToEdit->type));
-    memcpy(DropDownMenu.destination,
-           DropDownMenu.items_list[item_idx],
-           strlen(DropDownMenu.items_list[item_idx]));
-}
 
 void SelectCurrentUpgrade(upgrade *original) {
     currentUpgradeToEdit = original;
@@ -309,23 +292,6 @@ void SelectCurrentUpgrade(upgrade *original) {
     }
 }
 
-
-void DrawDropDownMenu() {
-    Color c;
-    for (int i = 0; i < DropDownMenu.num_items; ++i) {
-        Rectangle r = {DropDownMenu.rect.x, DropDownMenu.rect.y + 30 * i,
-                       DropDownMenu.rect.width, TEXT_RECT_HEIGHT};
-        if (CheckCollisionPointRec(mousePosition, r)) c = WHITE;
-        else c = LIGHTGRAY;
-        DrawRectangleRec(r, c);
-        DrawText(DropDownMenu.items_list[i],
-                 DropDownMenu.rect.x + PADDING, DropDownMenu.rect.y + TEXT_RECT_HEIGHT * i + PADDING,
-                 FONT_SIZE, MAROON);
-    }
-    DrawRectangleLinesEx(DropDownMenu.rect, 1, DARKGRAY);
-}
-
-
 void DrawGameState() {
     char speedStr[20];
     sprintf(speedStr, "%d", game_state.current_speed);
@@ -337,230 +303,71 @@ void DrawGameState() {
     sprintf(elapsedTime, "Elapsed time: %.1f", game_state.elapsed_time);
 }
 
-void DrawStaticContent() {
-    int i;
+void DrawCheatsTab() {
 
-    DrawRectangleLinesEx(addUpgradeButton, 2, BLACK);
-    DrawText("+", addUpgradeButton.x + PADDING, addUpgradeButton.y + PADDING * 0.33, FONT_SIZE, MAROON);
-    DrawGameState();
-    int fieldsElem = (sizeof(editFieldsList) / sizeof(editFieldsList[0]));
-    for (i = 0; i < fieldsElem; ++i) DrawInteract(editFieldsList[i]);
-    for (i = 0; i < amountSelectableUpgrades; ++i) DrawInteract(&selectUpgradesList[i]);
-    if (DropDownMenu.visible) {
-        DrawDropDownMenu();
+    GuiDrawText("Speed: ", speedCheatLabelRect, GUI_TEXT_ALIGN_LEFT, BLACK);
+    if (GuiTextEdit(speedCheatEditRect, speedCheatString, speedCheatEditMode)) speedCheatEditMode = !speedCheatEditMode;
+    if (GuiButton(speedCheatSetRect, "SET")) {
+        if (IsStringValidFloat(speedCheatString)) {
+            game_state.current_speed = StringToFloat(speedCheatString);
+            printf("Speed set to %s!\n", speedCheatString);
+        } else printf("Speed value %s of wrong format. Aborting conversion\n", speedCheatString);
+    }
+    if (GuiButton(speedCheatAddRect, "ADD")) {
+        if (IsStringValidFloat(speedCheatString)) {
+            game_state.current_speed += StringToFloat(speedCheatString);
+            printf("Speed added by %s!\n", speedCheatString);
+        } else printf("Speed value %s of wrong format. Aborting conversion\n", speedCheatString);
     }
 
-    // GuiGroupBox(selectMainRect, "Upgrades");
-    // GuiGroupBox(displayMainRect, "Edit upgrade");
-    // GuiLabel(speedRect, "Speed");
-
-    // int style = GuiGetStyle(SCROLLBAR, BORDER_WIDTH);
-    // style = GuiCheckBox((Rectangle){ 565, 280, 20, 20 }, "ARROWS_VISIBLE", GuiGetStyle(SCROLLBAR, ARROWS_VISIBLE));
-    // GuiSetStyle(SCROLLBAR, ARROWS_VISIBLE, style);
-
-
-    // if (GuiButton(scienceRect, "Science")) {
-    //     BuildSelectUpgradesList("science");
-    // }
-
-    // if (GuiButton(incrementalRect, "Incremental")) {
-    //     BuildSelectUpgradesList("incremental");
-    // }
-
-    // if (GuiButton(structRect, "Structure")) {
-    //     BuildSelectUpgradesList("structure");
-    // }
-
-    // if (GuiButton(softwareRect, "Software")) {
-    //     BuildSelectUpgradesList("software");
-    // }
-
-    // if (GuiButton(saveRect, "Save")) {
-    //     SaveGame();
-    // };
-
-
-
+    GuiDrawText("Acceleration: ", accelerationCheatLabelRect, GUI_TEXT_ALIGN_LEFT, BLACK);
+    if (GuiTextEdit(accelerationCheatEditRect, accelerationCheatString, accelerationCheatEditMode))
+        accelerationCheatEditMode = !accelerationCheatEditMode;
+    if (GuiButton(accelerationCheatSetRect, "SET")) {
+        if (IsStringValidFloat(accelerationCheatString)) {
+            game_state.current_acceleration = StringToFloat(accelerationCheatString);
+            printf("acceleration set to %s!\n", accelerationCheatString);
+        } else printf("acceleration value %s of wrong format. Aborting conversion\n", accelerationCheatString);
+    }
+    if (GuiButton(accelerationCheatAddRect, "ADD")) {
+        if (IsStringValidFloat(accelerationCheatString)) {
+            game_state.current_acceleration += StringToFloat(accelerationCheatString);
+            printf("acceleration added by %s!\n", accelerationCheatString);
+        } else printf("acceleration value %s of wrong format. Aborting conversion\n", accelerationCheatString);
+    }
+//    DrawText("Speed: ", posX, poxY, FONT_SIZE, BLACK);
+//    GuiTextEdit(speedCheatEditRect, speedCheatString, FONT_SIZE, )
+//    DrawText("Acceleration: ", posX, poxY + 30, FONT_SIZE, BLACK);
 }
 
-void HandleMouseClick() {
-
-    /* On mouse click down, activate pending action,
-       only activated on button release.
-       Pending action is cancelled on dragged gesture
-    */
-
-    int gesture = GetGestureDetected();
-
-    if (isDragging && IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
-        // Check if dropped in dependency list
-        if (CheckCollisionPointRec(mousePosition, editDependenciesInteract.rect)) {
-            AddDependency(dragedUpgrade->id);
-        }
-        isDragging = false;
-
-    }
-
-    if (gesture == GESTURE_DRAG) {
-        // Cancel pending actions
-        isAboutToSelect = false;
-        isAboutToRemoveItem = false;
-        isAboutToAddNewUpgrade = false;
-
-        // Check and start dragging upgrade from list
-        if (!isDragging) {
-            for (int i = 0; i < numUpgrades; ++i) {
-                Rectangle rec = selectUpgradesList[i].rect;
-                if (CheckCollisionPointRec(mousePosition, rec)) {
-                    isDragging = true;
-                    dragedUpgrade = &game_state.upgrades_list[i];
-                    draggedUpdateSprite.text = dragedUpgrade->id;
-                }
-            }
-        }
-    }
-
-    if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-        // Prepare actions that will be triggered on release
-        for (int i = 0; i < numUpgrades; ++i) {
-            Rectangle rec = selectUpgradesList[i].rect;
-            if (CheckCollisionPointRec(mousePosition, rec)) {
-                isAboutToSelect = true;
-            }
-        }
-        isAboutToAddNewUpgrade = (CheckCollisionPointRec(mousePosition, addUpgradeButton));
-    }
-    if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
-
-        // Select upgrade in left panel
-        if (isAboutToSelect) {
-            for (int i = 0; i < amountSelectableUpgrades; ++i) {
-                Rectangle rec = selectUpgradesList[i].rect;
-                if (CheckCollisionPointRec(mousePosition, rec)) {
-                    for (int j = 0; j < numUpgrades; ++j) {
-                        if (AreStrEquals(selectUpgradesList[i].text, game_state.upgrades_list[j].id)) {
-                            SelectCurrentUpgrade(&game_state.upgrades_list[j]);
-                        }
-                    }
-                }
-            }
-            isAboutToSelect = false;
-        }
-
-        if (isAboutToAddNewUpgrade && CheckCollisionPointRec(mousePosition, addUpgradeButton)) {
-            AddNewUpgrade();
-        }
-
-        // Select DropDownMenu item and close
-        if (DropDownMenu.visible &&
-            CheckCollisionPointRec(mousePosition, DropDownMenu.rect)) {
-            CloseDropDownMenu();
-        }
-        DropDownMenu.visible = false;
-
-        if (CheckCollisionPointRec(mousePosition, editTypeInteract.rect)) {
-            OpenDropDownMenu(editTypeInteract.text, typesList,
-                             sizeof(typesList) / sizeof(typesList[0]),
-                             editTypeInteract.rect.x, editTypeInteract.rect.y +
-                                                      editTypeInteract.rect.height);
-        } else if (CheckCollisionPointRec(mousePosition, editResourceInteract.rect)) {
-            OpenDropDownMenu(editResourceInteract.text, resourcesList,
-                             sizeof(resourcesList) / sizeof(resourcesList[0]),
-                             editResourceInteract.rect.x, editResourceInteract.rect.y +
-                                                          editResourceInteract.rect.height);
-        }
-    }
-
-    if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)) {
-        if (CheckCollisionPointRec(mousePosition, editDependenciesInteract.rect)) {
-            isAboutToRemoveDependency = true;
-        }
-        for (int i = 0; i < amountSelectableUpgrades; ++i) {
-            if (selectUpgradesList[i].isHovered) {
-                isAboutToRemoveUpgrade = true;
-            }
-        }
-
-    }
-    if (IsMouseButtonReleased(MOUSE_RIGHT_BUTTON)) {
-        if (isAboutToRemoveDependency) {
-            RemoveDependency();
-            isAboutToRemoveDependency = false;
-        }
-        if (isAboutToRemoveUpgrade) {
-            RemoveUpgrade();
-        }
-    }
-}
-
-void HandleMouseOver() {
-
-    int i;
-    for (i = 0; i < amountSelectableUpgrades; ++i) {
-        selectUpgradesList[i].isHovered = CheckCollisionPointRec(GetMousePosition(), selectUpgradesList[i].rect);
-    }
-
-    for (i = 0; i < (sizeof(editFieldsList) / sizeof(editFieldsList[0])); ++i) {
-        Interact *editField = editFieldsList[i];
-        editField->isHovered = CheckCollisionPointRec(mousePosition, editField->rect);
-        if (editField->isHovered && editField->isEditable) {
-            int cursorPos = strlen(editField->text);
-            if (IsKeyPressed(KEY_BACKSPACE)) {
-                if (cursorPos > 0) {
-                    editField->text[cursorPos - 1] = '\0';
-                }
-            }
-            while (keyPressed > 0) {
-                if (AreStrEquals(editField->id, "increase")) {
-                    if ((keyPressed >= 46) && (keyPressed <= 57)) {
-                        editField->text[cursorPos] = (char) keyPressed;
-                        editField->text[cursorPos + 1] = '\0';
-                        currentUpgradeToEdit->increase_factor = atof(editIncreaseInteract.text);
-                    }
-                } else if (AreStrEquals(editField->id, "amount")) {
-                    if ((keyPressed >= 48) && (keyPressed <= 57)) {
-                        editField->text[cursorPos] = (char) keyPressed;
-                        editField->text[cursorPos + 1] = '\0';
-                        currentUpgradeToEdit->initial_price.resources[0].amount = strtol(editAmountInteract.text, NULL,
-                                                                                         10);
-                    }
-                } else if (AreStrEquals(editField->id, "bought")) {
-                    if ((keyPressed >= 48) && (keyPressed <= 57)) {
-                        editField->text[cursorPos] = (char) keyPressed;
-                        editField->text[cursorPos + 1] = '\0';
-                        currentUpgradeToEdit->amount_bought = strtol(editBoughtInteract.text, NULL, 10);
-                    }
-                } else if ((keyPressed >= 32) && (keyPressed <= 125)) {
-                    editField->text[cursorPos] = (char) keyPressed;
-                    editField->text[cursorPos + 1] = '\0';
-                }
-                keyPressed = GetKeyPressed();
-            }
-        }
-    }
-
-    if (isDragging) {
-        draggedUpdateSprite.rect.x = mousePosition.x;
-        draggedUpdateSprite.rect.y = mousePosition.y;
-        DrawInteract(&draggedUpdateSprite);
-    }
-}
-
-
-void DrawConfigPanel(float panelWidth, float panelHeight) {
+void DrawConfigPanel(int posX, int poxY) {
     if (!initDone) {
-        initiateUI();
+        initiateUI(posX, poxY);
     }
 
-    HandleMouseOver();
-    HandleMouseClick();
-    DrawStaticContent();
+    configTabSelectedEntry = GuiTabs(configTabRect, configTabEntries,
+                                     sizeof(configTabEntries) / sizeof(configTabEntries[0]), configTabSelectedEntry);
+
+    switch (configTabSelectedEntry) {
+        case 0:
+//            DrawStaticContent();
+            break;
+        case 1:
+            DrawCheatsTab();
+            break;
+        default:
+            break;
+    }
+
+//    HandleMouseOver();
+//    HandleMouseClick();
 
 
 }
 
-void initiateUI() {
-    buildUI();
+
+void initiateUI(int posX, int poxY) {
+    buildUI(posX, poxY);
 
     BuildSelectUpgradesList("structure");
     SelectCurrentUpgrade(&game_state.upgrades_list[0]);
@@ -571,9 +378,41 @@ void initiateUI() {
     initDone = true;
 }
 
-void buildUI() {
-    float displayRectXAnchor = anchorX + MAX_UPGRADE_NAME_LENGTH + 20 * SCALE_FACTOR;
-    float displayRectYAnchor = anchorY;
+void buildUI(int posX, int poxY) {
+    anchorY = poxY;
+    anchorX = posX;
+    configTabRect = (Rectangle) {posX + PADDING, poxY + PADDING, 300, 30};
+
+    // CHEAT
+    int line_height = 30;
+    speedCheatLabelRect = (Rectangle) {posX + 40, poxY + 40,
+                                       MeasureText("Speed: ", FONT_SIZE), line_height};
+    speedCheatEditRect = (Rectangle) {speedCheatLabelRect.x + speedCheatLabelRect.width + PADDING,
+                                      speedCheatLabelRect.y,
+                                      50, line_height};
+    speedCheatSetRect = (Rectangle) {speedCheatEditRect.x + speedCheatEditRect.width + PADDING,
+                                     speedCheatEditRect.y,
+                                     40, line_height};
+    speedCheatAddRect = (Rectangle) {speedCheatSetRect.x + speedCheatSetRect.width + PADDING,
+                                     speedCheatSetRect.y,
+                                     40, line_height};
+
+    accelerationCheatLabelRect = (Rectangle) {speedCheatLabelRect.x,
+                                              speedCheatLabelRect.y + speedCheatLabelRect.height + 20,
+                                              MeasureText("acceleration: ", FONT_SIZE), line_height};
+    accelerationCheatEditRect = (Rectangle) {accelerationCheatLabelRect.x + accelerationCheatLabelRect.width + PADDING,
+                                             accelerationCheatLabelRect.y,
+                                             50, line_height};
+    accelerationCheatSetRect = (Rectangle) {accelerationCheatEditRect.x + accelerationCheatEditRect.width + PADDING,
+                                            accelerationCheatEditRect.y,
+                                            40, line_height};
+    accelerationCheatAddRect = (Rectangle) {accelerationCheatSetRect.x + accelerationCheatSetRect.width + PADDING,
+                                            accelerationCheatSetRect.y,
+                                            40, line_height};
+
+    // CONFIG
+    float displayRectXAnchor = posX + MAX_UPGRADE_NAME_LENGTH + 20 * SCALE_FACTOR;
+    float displayRectYAnchor = poxY;
 
     displayNameRect = (Rectangle) {displayRectXAnchor + PADDING,
                                    displayRectYAnchor + PADDING,
@@ -612,7 +451,7 @@ void buildUI() {
     editAmountInteract = (Interact) {"amount", "amount", displayAmountRect, "", false, true};
     editBoughtInteract = (Interact) {"bought", "bought", displayBoughtRect, "", false, true};
 
-    gameStateRectangle = (Rectangle) {anchorX, displayMainRect.y + displayMainRect.height + PADDING,
+    gameStateRectangle = (Rectangle) {posX, displayMainRect.y + displayMainRect.height + PADDING,
                                       selectMainRectWidth + displayMainRectWidth + PADDING * 2, 200
     };
 
@@ -626,4 +465,6 @@ void buildUI() {
     saveRect = (Rectangle) {gameStateRectangle.x + gameStateRectangle.width - saveWidth,
                             gameStateRectangle.y + gameStateRectangle.height + PADDING,
                             saveWidth, 30};
+    addUpgradeButton = (Rectangle) {posX, 0,
+                                    addButtonWidth, addButtonWidth};
 }

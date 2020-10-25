@@ -8,9 +8,9 @@
 #define EDIT_MODE_H
 
 #include "gui.h"
-#include "game.h"
+#include "../game.h"
 
-void DrawConfigPanel(float panelWidth, float panelHeight);
+void DrawConfigPanel(int posX, int posY);
 //void DrawInteract(Interact tr);
 
 #endif

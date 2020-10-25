@@ -7,12 +7,10 @@
 
 #include "types.h"
 
-
 #define MAX_UPGRADES_AMOUNT 30
 #define MAX_RESOURCES_AMOUNT 5
 #define MAX_RESOURCES_PER_PRICE 4
 #define MAX_DEPENDENCIES 4
-
 #define UPGRADE_ID_MAX_LENGTH 25
 
 typedef void* UPGRADE;
@@ -47,7 +45,10 @@ typedef struct GameState{
     resource resources_list[MAX_RESOURCES_AMOUNT];
 } GameState;
 
-extern GameState game_state; // Original one
+extern GameState game_state;
 GameState BuildGameConfig(const upgrade up_list[], int number_upgrades, const resource res_list[], int number_resources);
 
+u_speed GetCurrentSpeed();
+u_distance GetTraveledDistance();
+u_acceleration GetCurrentAcceleration();
 #endif //TRANSVERSE_GAME_H

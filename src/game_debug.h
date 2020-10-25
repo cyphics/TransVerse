@@ -4,6 +4,7 @@
    $Revision: $
    $Creator: Thierry Raeber $
    ======================================================================== */
+
 #if !defined(GAME_DEBUG_H)
 #define GAME_DEBUG_H
 

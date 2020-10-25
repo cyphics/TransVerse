@@ -26,11 +26,13 @@ typedef struct UpgradeInfo
     void *handle;
 } UpgradeInfo;
 
-typedef struct HandleList
+typedef struct UpgradesHandleList
 {
     void* list[MAX_UPGRADES_AMOUNT];
     int size;
-} HandleList;
+} UpgradesHandleList;
+
+extern UpgradesHandleList AvailableUpgrades;
 
 void UpdateAffordableUpgrades();
 void UpdateAvailableUpgrades();

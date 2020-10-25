@@ -12,9 +12,10 @@
 #include "game_debug.h"
 #include "storage.h"
 #include "physics.h"
-#include "gui.h"
+#include "gui/gui.h"
+#include "gui/gui_game.h"
 
-HandleList AvailableUpgrades;
+UpgradesHandleList AvailableUpgrades = {};
 
 upgrade *GetUpgradeFromName(char *name)
 {

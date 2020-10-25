@@ -12,11 +12,10 @@ set(LIB_SOURCES
         game_debug.c
         helper.c
         storage.c
-        gui.c
-        gui_game.c
-        gui_config.c
-        gui_code.c physics.c)
-
+        gui/gui.c
+        gui/gui_game.c
+        gui/gui_config.c
+        gui/gui_code.c physics.c gui/gui_tools.c )
 set(MAIN_SOURCES main.c)
 set(HEADERS  ${CONFIG_HEADER}
         game_handler.h
@@ -24,21 +23,21 @@ set(HEADERS  ${CONFIG_HEADER}
         game_debug.h
         helper.h
         storage.h
-        gui.h
-        gui_game.c
-        gui_config.c
-        gui_code.c gui_game.h  gui_constants.h physics.h)
+        gui/gui.h
+        gui/gui_game.c
+        gui/gui_config.c
+        gui/gui_code.c gui/gui_game.h gui/gui_constants.h physics.h gui/gui_tools.h )
 
 include_directories(${PROJECT_SOURCE_DIR}/src/)
-add_library(game STATIC ${LIB_SOURCES} ${HEADERS})
+add_library(transverse_lib STATIC ${LIB_SOURCES} ${HEADERS})
 add_executable(transverse ${HEADERS} ${MAIN_SOURCES})
 
 target_include_directories(transverse PRIVATE ../include)
 target_link_libraries(transverse m) # Add math library
 target_link_libraries(transverse raylib)
-target_link_libraries(transverse game)
+target_link_libraries(transverse transverse_lib)
 
-install(TARGETS game
+install(TARGETS transverse_lib
         RUNTIME DESTINATION bin
         LIBRARY DESTINATION ../lib
         ARCHIVE DESTINATION ../lib)

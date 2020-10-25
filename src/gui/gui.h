@@ -9,10 +9,6 @@
 
 #include <raylib.h>
 
-
-
-
-
 enum Panel{
     TERMINAL_TAB,
     EDITOR_TAB,
@@ -32,7 +28,7 @@ typedef struct Interact{
     float fontSize;
 } Interact;
 
-void DrawInteract(Interact *tr);
+
 int GuiListViewExDrag(Rectangle bounds, const char **text, int count, int *focus, int *scrollIndex, int active, void (DragGallBack(int)));
 void StartGui();
 
