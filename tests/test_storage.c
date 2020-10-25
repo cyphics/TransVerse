@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <check.h>
+#include <storage.h>
 // #include "game.h"
 //#include "includes.c"
 

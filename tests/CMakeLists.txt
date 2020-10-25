@@ -15,4 +15,4 @@ set(TEST_SOURCES
         test_storage.c test_main.c test_storage.h)
 
 add_executable(test_suite ${TEST_SOURCES})
-target_link_libraries(test_suite game ${CHECK_LIBRARIES})
+target_link_libraries(test_suite transverse_lib ${CHECK_LIBRARIES})

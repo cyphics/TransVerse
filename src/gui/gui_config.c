@@ -30,12 +30,15 @@ char *configTabEntries[2] = {"Config", "Cheat"};
 int configTabSelectedEntry = 1;
 
 // CHEAT TAB
-Rectangle speedCheatLabelRect;
-Rectangle speedCheatEditRect;
-Rectangle speedCheatSetRect;
-Rectangle speedCheatAddRect;
-char speedCheatString[64] = "0";
-bool speedCheatEditMode = false;
+Rectangle   speedLabelRect;
+Rectangle   speedValueRect;
+char        speedValueString[64] = "0";
+bool        speedValueEditMode = false;
+Rectangle   speedDropdownUnitRect;
+bool        speedDropdownEditMode = false;
+int         speedDropdownActive = 0;
+Rectangle   speedSetButtonRect;
+Rectangle   speedAddButtonRect;
 
 Rectangle accelerationCheatLabelRect;
 Rectangle accelerationCheatEditRect;
@@ -305,19 +308,19 @@ void DrawGameState() {
 
 void DrawCheatsTab() {
 
-    GuiDrawText("Speed: ", speedCheatLabelRect, GUI_TEXT_ALIGN_LEFT, BLACK);
-    if (GuiTextEdit(speedCheatEditRect, speedCheatString, speedCheatEditMode)) speedCheatEditMode = !speedCheatEditMode;
-    if (GuiButton(speedCheatSetRect, "SET")) {
-        if (IsStringValidFloat(speedCheatString)) {
-            game_state.current_speed = StringToFloat(speedCheatString);
-            printf("Speed set to %s!\n", speedCheatString);
-        } else printf("Speed value %s of wrong format. Aborting conversion\n", speedCheatString);
+    GuiDrawText("Speed: ", speedLabelRect, GUI_TEXT_ALIGN_LEFT, BLACK);
+    if (GuiTextEdit(speedValueRect, speedValueString, speedValueEditMode)) speedValueEditMode = !speedValueEditMode;
+    if (GuiButton(speedSetButtonRect, "SET")) {
+        if (IsStringValidFloat(speedValueString)) {
+            game_state.current_speed = StringToFloat(speedValueString);
+            printf("Speed set to %s!\n", speedValueString);
+        } else printf("Speed value %s of wrong format. Aborting conversion\n", speedValueString);
     }
-    if (GuiButton(speedCheatAddRect, "ADD")) {
-        if (IsStringValidFloat(speedCheatString)) {
-            game_state.current_speed += StringToFloat(speedCheatString);
-            printf("Speed added by %s!\n", speedCheatString);
-        } else printf("Speed value %s of wrong format. Aborting conversion\n", speedCheatString);
+    if (GuiButton(speedAddButtonRect, "ADD")) {
+        if (IsStringValidFloat(speedValueString)) {
+            game_state.current_speed += StringToFloat(speedValueString);
+            printf("Speed added by %s!\n", speedValueString);
+        } else printf("Speed value %s of wrong format. Aborting conversion\n", speedValueString);
     }
 
     GuiDrawText("Acceleration: ", accelerationCheatLabelRect, GUI_TEXT_ALIGN_LEFT, BLACK);
@@ -335,9 +338,8 @@ void DrawCheatsTab() {
             printf("acceleration added by %s!\n", accelerationCheatString);
         } else printf("acceleration value %s of wrong format. Aborting conversion\n", accelerationCheatString);
     }
-//    DrawText("Speed: ", posX, poxY, FONT_SIZE, BLACK);
-//    GuiTextEdit(speedCheatEditRect, speedCheatString, FONT_SIZE, )
-//    DrawText("Acceleration: ", posX, poxY + 30, FONT_SIZE, BLACK);
+
+    if(GuiDropdownBox(speedDropdownUnitRect, "One;Two", &speedDropdownActive, speedDropdownEditMode)) speedDropdownEditMode = !speedDropdownEditMode;
 }
 
 void DrawConfigPanel(int posX, int poxY) {
@@ -358,11 +360,6 @@ void DrawConfigPanel(int posX, int poxY) {
         default:
             break;
     }
-
-//    HandleMouseOver();
-//    HandleMouseClick();
-
-
 }
 
 
@@ -384,22 +381,27 @@ void buildUI(int posX, int poxY) {
     configTabRect = (Rectangle) {posX + PADDING, poxY + PADDING, 300, 30};
 
     // CHEAT
-    int line_height = 30;
-    speedCheatLabelRect = (Rectangle) {posX + 40, poxY + 40,
-                                       MeasureText("Speed: ", FONT_SIZE), line_height};
-    speedCheatEditRect = (Rectangle) {speedCheatLabelRect.x + speedCheatLabelRect.width + PADDING,
-                                      speedCheatLabelRect.y,
-                                      50, line_height};
-    speedCheatSetRect = (Rectangle) {speedCheatEditRect.x + speedCheatEditRect.width + PADDING,
-                                     speedCheatEditRect.y,
-                                     40, line_height};
-    speedCheatAddRect = (Rectangle) {speedCheatSetRect.x + speedCheatSetRect.width + PADDING,
-                                     speedCheatSetRect.y,
-                                     40, line_height};
+    float line_height = 30.0f;
+    int label_width = 70;
 
-    accelerationCheatLabelRect = (Rectangle) {speedCheatLabelRect.x,
-                                              speedCheatLabelRect.y + speedCheatLabelRect.height + 20,
-                                              MeasureText("acceleration: ", FONT_SIZE), line_height};
+    speedLabelRect = (Rectangle) {posX + 40, poxY + 40,
+                                  label_width, line_height};
+    speedValueRect = (Rectangle) {speedLabelRect.x + speedLabelRect.width + PADDING,
+                                  speedLabelRect.y,
+                                  50, line_height};
+    speedDropdownUnitRect = (Rectangle) {speedValueRect.x + speedValueRect.width + PADDING,
+                                         speedValueRect.y,
+                                         100, line_height};
+    speedSetButtonRect = (Rectangle) {speedDropdownUnitRect.x + speedDropdownUnitRect.width + PADDING,
+                                      speedDropdownUnitRect.y,
+                                      40, line_height};
+    speedAddButtonRect = (Rectangle) {speedSetButtonRect.x + speedSetButtonRect.width + PADDING,
+                                      speedSetButtonRect.y,
+                                      40, line_height};
+
+    accelerationCheatLabelRect = (Rectangle) {speedLabelRect.x,
+                                              speedLabelRect.y + speedLabelRect.height + 20,
+                                              label_width, line_height};
     accelerationCheatEditRect = (Rectangle) {accelerationCheatLabelRect.x + accelerationCheatLabelRect.width + PADDING,
                                              accelerationCheatLabelRect.y,
                                              50, line_height};

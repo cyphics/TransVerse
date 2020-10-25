@@ -45,7 +45,6 @@ void GuiLoadStyleDefault(void) {
     guiStyleLoaded = true;
 
     // Initialize default LIGHT style property values
-    // Initialize default LIGHT style property values
     GuiSetStyle(DEFAULT, BORDER_COLOR_NORMAL, 0x838383ff);
     GuiSetStyle(DEFAULT, BASE_COLOR_NORMAL, 0xc9c9c9ff);
     GuiSetStyle(DEFAULT, TEXT_COLOR_NORMAL, 0x686868ff);
@@ -58,6 +57,8 @@ void GuiLoadStyleDefault(void) {
     GuiSetStyle(DEFAULT, BORDER_COLOR_DISABLED, 0xb5c1c2ff);
     GuiSetStyle(DEFAULT, BASE_COLOR_DISABLED, 0xe6e9e9ff);
     GuiSetStyle(DEFAULT, TEXT_COLOR_DISABLED, 0xaeb7b8ff);
+    GuiSetStyle(DEFAULT, LINE_COLOR, 0x90abb5ff);       // DEFAULT specific property
+    GuiSetStyle(DEFAULT, BACKGROUND_COLOR, 0xf5f5f5ff);       // DEFAULT specific property
     GuiSetStyle(DEFAULT, BORDER_WIDTH, 1);                       // WARNING: Some controls use other values
     GuiSetStyle(DEFAULT, TEXT_PADDING, 0);                       // WARNING: Some controls use other values
     GuiSetStyle(DEFAULT, TEXT_ALIGNMENT, GUI_TEXT_ALIGN_CENTER); // WARNING: Some controls use other values
@@ -74,7 +75,8 @@ void GuiLoadStyleDefault(void) {
     // NOTE: By default, extended property values are initialized to 0
     GuiSetStyle(DEFAULT, TEXT_SIZE, 10);                // DEFAULT, shared by all controls
     GuiSetStyle(DEFAULT, TEXT_SPACING, 1);
-
+    GuiSetStyle(DROPDOWNBOX, DROPDOWN_ITEMS_PADDING, 2);
+    GuiSetStyle(DROPDOWNBOX, ARROW_PADDING, 16);
     guiFont = GetFontDefault();     // Initialize default font
 }
 
@@ -355,4 +357,180 @@ int GuiTabs(Rectangle bounds, char **entries, int num_entries, int current_entry
         DrawText(entries[i], x_anchor + padding, tab_y_anchor, FONT_SIZE, GRAY);
     }
     return current_entry;
+}
+
+// Split controls text into multiple strings
+// Also check for multiple columns (required by GuiToggleGroup())
+static const char **GuiTextSplit(const char *text, int *count, int *textRow) {
+    // NOTE: Current implementation returns a copy of the provided string with '\0' (string end delimiter)
+    // inserted between strings defined by "delimiter" parameter. No memory is dynamically allocated,
+    // all used memory is static... it has some limitations:
+    //      1. Maximum number of possible split strings is set by TEXTSPLIT_MAX_TEXT_ELEMENTS
+    //      2. Maximum size of text to split is TEXTSPLIT_MAX_TEXT_LENGTH
+    // NOTE: Those definitions could be externally provided if required
+
+#if !defined(TEXTSPLIT_MAX_TEXT_LENGTH)
+#define TEXTSPLIT_MAX_TEXT_LENGTH      1024
+#endif
+
+#if !defined(TEXTSPLIT_MAX_TEXT_ELEMENTS)
+#define TEXTSPLIT_MAX_TEXT_ELEMENTS     128
+#endif
+
+    static const char *result[TEXTSPLIT_MAX_TEXT_ELEMENTS] = {NULL};
+    static char buffer[TEXTSPLIT_MAX_TEXT_LENGTH] = {0};
+    memset(buffer, 0, TEXTSPLIT_MAX_TEXT_LENGTH);
+
+    result[0] = buffer;
+    int counter = 1;
+
+    if (textRow != NULL) textRow[0] = 0;
+
+    // Count how many substrings we have on text and point to every one
+    for (int i = 0; i < TEXTSPLIT_MAX_TEXT_LENGTH; i++) {
+        buffer[i] = text[i];
+        if (buffer[i] == '\0') break;
+        else if ((buffer[i] == ';') || (buffer[i] == '\n')) {
+            result[counter] = buffer + i + 1;
+
+            if (textRow != NULL) {
+                if (buffer[i] == '\n') textRow[counter] = textRow[counter - 1] + 1;
+                else textRow[counter] = textRow[counter - 1];
+            }
+
+            buffer[i] = '\0';   // Set an end of string at this point
+
+            counter++;
+            if (counter == TEXTSPLIT_MAX_TEXT_ELEMENTS) break;
+        }
+    }
+
+    *count = counter;
+
+    return result;
+}
+
+// Panel control
+void GuiPanel(Rectangle bounds)
+{
+#define PANEL_BORDER_WIDTH   1
+
+    GuiControlState state = GUI_STATE_NORMAL;
+
+    // Draw control
+    //--------------------------------------------------------------------
+    GuiDrawRectangle(bounds, PANEL_BORDER_WIDTH, Fade(GetColor(GuiGetStyle(DEFAULT, (state == GUI_STATE_DISABLED)? BORDER_COLOR_DISABLED: LINE_COLOR)), guiAlpha),
+                     Fade(GetColor(GuiGetStyle(DEFAULT, (state == GUI_STATE_DISABLED)? BASE_COLOR_DISABLED : BACKGROUND_COLOR)), guiAlpha));
+    //--------------------------------------------------------------------
+}
+
+// Dropdown Box control
+// NOTE: Returns mouse click
+bool GuiDropdownBox(Rectangle bounds, const char *text, int *active, bool editMode) {
+    GuiControlState state = GUI_STATE_NORMAL;
+    int itemSelected = *active;
+    int itemFocused = -1;
+
+    // Get substrings items from text (items pointers, lengths and count)
+    int itemsCount = 0;
+    const char **items = GuiTextSplit(text, &itemsCount, NULL);
+
+    Rectangle boundsOpen = bounds;
+    boundsOpen.height = (itemsCount + 1) * (bounds.height + GuiGetStyle(DROPDOWNBOX, DROPDOWN_ITEMS_PADDING));
+
+    Rectangle itemBounds = bounds;
+
+    bool pressed = false;       // Check mouse button pressed
+
+    // Update control
+    //--------------------------------------------------------------------
+
+    Vector2 mousePoint = GetMousePosition();
+
+    if (editMode) {
+        state = GUI_STATE_PRESSED;
+
+        // Check if mouse has been pressed or released outside limits
+        if (!CheckCollisionPointRec(mousePoint, boundsOpen)) {
+            if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) || IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) pressed = true;
+        }
+
+        // Check if already selected item has been pressed again
+        if (CheckCollisionPointRec(mousePoint, bounds) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) pressed = true;
+
+        // Check focused and selected item
+        for (int i = 0; i < itemsCount; i++) {
+            // Update item rectangle y position for next item
+            itemBounds.y += (bounds.height + GuiGetStyle(DROPDOWNBOX, DROPDOWN_ITEMS_PADDING));
+
+            if (CheckCollisionPointRec(mousePoint, itemBounds)) {
+                itemFocused = i;
+                if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
+                    itemSelected = i;
+                    pressed = true;     // Item selected, change to editMode = false
+                }
+                break;
+            }
+        }
+
+        itemBounds = bounds;
+    } else {
+        if (CheckCollisionPointRec(mousePoint, bounds)) {
+            if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+                pressed = true;
+                state = GUI_STATE_PRESSED;
+            } else state = GUI_STATE_FOCUSED;
+        }
+    }
+    //--------------------------------------------------------------------
+
+    // Draw control
+    //--------------------------------------------------------------------
+    if (editMode) GuiPanel(boundsOpen);
+
+    GuiDrawRectangle(bounds, GuiGetStyle(DROPDOWNBOX, BORDER_WIDTH),
+                     Fade(GetColor(GuiGetStyle(DROPDOWNBOX, BORDER + state * 3)), guiAlpha),
+                     Fade(GetColor(GuiGetStyle(DROPDOWNBOX, BASE + state * 3)), guiAlpha));
+    GuiDrawText(items[itemSelected], GetTextBounds(DEFAULT, bounds), GuiGetStyle(DROPDOWNBOX, TEXT_ALIGNMENT),
+                Fade(GetColor(GuiGetStyle(DROPDOWNBOX, TEXT + state * 3)), guiAlpha));
+
+    if (editMode) {
+        // Draw visible items
+        for (int i = 0; i < itemsCount; i++) {
+            // Update item rectangle y position for next item
+            itemBounds.y += (bounds.height + GuiGetStyle(DROPDOWNBOX, DROPDOWN_ITEMS_PADDING));
+
+            if (i == itemSelected) {
+                GuiDrawRectangle(itemBounds, GuiGetStyle(DROPDOWNBOX, BORDER_WIDTH),
+                                 Fade(GetColor(GuiGetStyle(DROPDOWNBOX, BORDER_COLOR_PRESSED)), guiAlpha),
+                                 Fade(GetColor(GuiGetStyle(DROPDOWNBOX, BASE_COLOR_PRESSED)), guiAlpha));
+                GuiDrawText(items[i], GetTextBounds(DEFAULT, itemBounds), GuiGetStyle(DROPDOWNBOX, TEXT_ALIGNMENT),
+                            Fade(GetColor(GuiGetStyle(DROPDOWNBOX, TEXT_COLOR_PRESSED)), guiAlpha));
+            } else if (i == itemFocused) {
+                GuiDrawRectangle(itemBounds, GuiGetStyle(DROPDOWNBOX, BORDER_WIDTH),
+                                 Fade(GetColor(GuiGetStyle(DROPDOWNBOX, BORDER_COLOR_FOCUSED)), guiAlpha),
+                                 Fade(GetColor(GuiGetStyle(DROPDOWNBOX, BASE_COLOR_FOCUSED)), guiAlpha));
+                GuiDrawText(items[i], GetTextBounds(DEFAULT, itemBounds), GuiGetStyle(DROPDOWNBOX, TEXT_ALIGNMENT),
+                            Fade(GetColor(GuiGetStyle(DROPDOWNBOX, TEXT_COLOR_FOCUSED)), guiAlpha));
+            } else
+                GuiDrawText(items[i], GetTextBounds(DEFAULT, itemBounds), GuiGetStyle(DROPDOWNBOX, TEXT_ALIGNMENT),
+                            Fade(GetColor(GuiGetStyle(DROPDOWNBOX, TEXT_COLOR_NORMAL)), guiAlpha));
+        }
+    }
+
+    // TODO: Avoid this function, use icon instead or 'v'
+    DrawTriangle((Vector2) {bounds.x + bounds.width - GuiGetStyle(DROPDOWNBOX, ARROW_PADDING),
+                            bounds.y + bounds.height / 2 - 2},
+                 (Vector2) {bounds.x + bounds.width - GuiGetStyle(DROPDOWNBOX, ARROW_PADDING) + 5,
+                            bounds.y + bounds.height / 2 - 2 + 5},
+                 (Vector2) {bounds.x + bounds.width - GuiGetStyle(DROPDOWNBOX, ARROW_PADDING) + 10,
+                            bounds.y + bounds.height / 2 - 2},
+                 Fade(GetColor(GuiGetStyle(DROPDOWNBOX, TEXT + (state * 3))), guiAlpha));
+
+    //GuiDrawText("v", RAYGUI_CLITERAL(Rectangle){ bounds.x + bounds.width - GuiGetStyle(DROPDOWNBOX, ARROW_PADDING), bounds.y + bounds.height/2 - 2, 10, 10 },
+    //            GUI_TEXT_ALIGN_CENTER, Fade(GetColor(GuiGetStyle(DROPDOWNBOX, TEXT + (state*3))), guiAlpha));
+    //--------------------------------------------------------------------
+
+    *active = itemSelected;
+    return pressed;
 }

@@ -69,6 +69,12 @@ typedef enum {
     TEXT_INNER_PADDING = 16
 } GuiTextBoxProperty;
 
+// DropdownBox
+typedef enum {
+    ARROW_PADDING = 16,
+    DROPDOWN_ITEMS_PADDING
+} GuiDropdownBoxProperty;
+
 // Gui control property style color element
 typedef enum { BORDER = 0, BASE, TEXT, OTHER } GuiPropertyElement;
 
@@ -95,5 +101,5 @@ void GuiLabelBox(int posX, int posY, char *label, char *content);
 bool GuiTextEdit(Rectangle bounds, char *text, bool editMode);
 bool GuiButton(Rectangle bounds, const char *text);
 //void DrawInteract(Interact *tr);
-
+bool GuiDropdownBox(Rectangle bounds, const char *text, int *active, bool editMode);
 #endif //TRANSVERSE_GUI_TOOLS_H

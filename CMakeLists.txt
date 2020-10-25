@@ -72,7 +72,7 @@ set(CONFIG_HEADER ${CMAKE_CURRENT_BINARY_DIR}/config.h)
 ###############################################################################
 # Subdirectories
 add_subdirectory(src)
-#add_subdirectory(tests)
+add_subdirectory(tests)
 
 ###############################################################################
 # Unit tests

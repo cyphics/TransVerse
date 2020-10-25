@@ -137,6 +137,7 @@ void Wait(u_time elapsed_time)
     game_state.traveled_distance += TraveledDistance(game_state.current_speed,
                                                      elapsed_time,
                                                      game_state.current_acceleration);
+    game_state.current_speed += game_state.current_acceleration * elapsed_time;
     // gather resources
     // update state ?
 }

@@ -52,6 +52,7 @@ static const distance_standard dist_std =
    {"lightyear", 9.4607304725808e+39},
   };
 
+
 typedef struct distance_milestones
 {
   physics_unit radius_proton;

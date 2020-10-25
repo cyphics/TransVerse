@@ -183,10 +183,10 @@ void DrawEngine() {
     DrawRectangleLinesEx(engineDataRect, 1, BLACK);
     int v_space = 20;
     int x_pos = engineMilestonesRect.x + PADDING;
-    char currentSpeed[10];
-    sprintf(currentSpeed, "%f", (float)GetCurrentSpeed());
-    char currentAcceleration[10];
-    sprintf(currentAcceleration, "%f", (float)GetCurrentAcceleration());
+    char currentSpeed[20];
+    char currentAcceleration[20];
+    sprintf(currentSpeed, "%.3f", (float)GetCurrentSpeed());
+    sprintf(currentAcceleration, "%.3f", (float)GetCurrentAcceleration());
     GuiLabelBox(x_pos, engineDataRect.y + PADDING, "Speed", currentSpeed);
     GuiLabelBox(x_pos, engineDataRect.y + v_space + PADDING, "Distance", "0m");
     GuiLabelBox(x_pos, engineDataRect.y + (v_space + PADDING) * 2, "Acceleration", currentAcceleration);
