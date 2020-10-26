@@ -10,15 +10,17 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "gui.h"
-#include "../game.h"
-#include "../game_handler.h"
-#include "../helper.h"
+#include "../gui.h"
+#include "../../game.h"
+#include "../../game_handler.h"
+#include "../../helper.h"
 //#include "gui_code.h"
-#include "gui_config.h"
+#include "../gui_config.h"
 #include "gui_game.h"
-#include "gui_constants.h"
-#include "gui_tools.h"
+#include "../gui_constants.h"
+#include "../gui_tools.h"
+#include "gui_engine.h"
+#include "../gui_utils.h"
 
 bool isGameGuiInit = false;
 
@@ -64,8 +66,7 @@ Interact availIncrementInter[max_available_ugprade_per_type] = {};
 Rectangle mainPanelRect;
 Rectangle subPanelRect;
 
-Rectangle engineDataRect;
-Rectangle engineMilestonesRect;
+
 
 void RefreshUpgradesLists() {
     structCount = 0;
@@ -179,20 +180,7 @@ void DrawTerminal() {
 //    }
 }
 
-void DrawEngine() {
-    DrawRectangleLinesEx(engineDataRect, 1, BLACK);
-    int v_space = 20;
-    int x_pos = engineMilestonesRect.x + PADDING;
-    char currentSpeed[20];
-    char currentAcceleration[20];
-    sprintf(currentSpeed, "%.3f", (float)GetCurrentSpeed());
-    sprintf(currentAcceleration, "%.3f", (float)GetCurrentAcceleration());
-    GuiLabelBox(x_pos, engineDataRect.y + PADDING, "Speed", currentSpeed);
-    GuiLabelBox(x_pos, engineDataRect.y + v_space + PADDING, "Distance", "0m");
-    GuiLabelBox(x_pos, engineDataRect.y + (v_space + PADDING) * 2, "Acceleration", currentAcceleration);
 
-    DrawRectangleLinesEx(engineMilestonesRect, 1, BLACK);
-}
 
 void InitGameUI(int posX, int posY) {
 
@@ -201,10 +189,8 @@ void InitGameUI(int posX, int posY) {
     subPanelRect = (Rectangle) {posX + PADDING, posY + PADDING + tabHeight + PADDING * 2,
                                 800 - PADDING * 2, 560 - PADDING * 2};
 
-    engineDataRect = (Rectangle) {subPanelRect.x + PADDING, subPanelRect.y + PADDING,
-                                  300, 100};
-    engineMilestonesRect = (Rectangle) {engineDataRect.x, engineDataRect.y + engineDataRect.height + PADDING,
-                                        300, 400};
+
+    InitEngineScreen(subPanelRect.x + PADDING, subPanelRect.y + PADDING);
 
 
     typesTabRect = (Rectangle) {mainPanelRect.x + PADDING,
@@ -240,13 +226,13 @@ void InitGameUI(int posX, int posY) {
     isGameGuiInit = true;
 }
 
-void DrawGame(int posX, int posY) {
+void DrawGame() {
     static char some_text[100] = "Some text";
     static bool isPressed = false;
 
-    if (!isGameGuiInit) {
-        InitGameUI(posX, posY);
-    }
+//    if (!isGameGuiInit) {
+//        InitGameUI(posX, posY);
+//    }
 
     typesSelectedTab = GuiTabs(typesTabRect, typesTabsLabels, sizeof(typesTabsLabels) / sizeof(typesTabsLabels[0]), typesSelectedTab);
     switch (typesSelectedTab) {

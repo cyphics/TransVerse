@@ -8,6 +8,6 @@
 
 #define TEST_GAME_H
 
-Suite *game_suite(void);
+Suite *game_test_suite(void);
 
 #endif

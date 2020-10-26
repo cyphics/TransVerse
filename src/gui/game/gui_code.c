@@ -7,7 +7,7 @@
 
 #include <raylib.h>
 #include <stdio.h>
-#include "gui_constants.h"
+#include "../gui_constants.h"
 
 const char message[128] = "This sample illustrates a text writing\nanimation effect! Check it out! ;)";
 int lines = 0;

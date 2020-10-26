@@ -10,9 +10,8 @@ find_package(Check REQUIRED)
 include_directories(${CHECK_INCLUDE_DIRS})
 link_directories(${CHECK_LIBRARY_DIRS})
 
-set(TEST_SOURCES
-  test_game.c
-        test_storage.c test_main.c test_storage.h)
+set(TEST_SOURCES test_game.c test_storage.c test_main.c test_physics.c test_physics.h)
 
 add_executable(test_suite ${TEST_SOURCES})
 target_link_libraries(test_suite transverse_lib ${CHECK_LIBRARIES})
+target_link_libraries(test_suite m) # Add math library

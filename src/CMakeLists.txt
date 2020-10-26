@@ -13,10 +13,10 @@ set(LIB_SOURCES
         helper.c
         storage.c
         gui/gui.c
-        gui/gui_game.c
+        gui/game/gui_game.c
         gui/gui_config.c
-        gui/gui_code.c physics.c gui/gui_tools.c )
-set(MAIN_SOURCES main.c)
+        gui/game/gui_code.c physics.c gui/gui_tools.c )
+set(MAIN_SOURCES main.c gui/game/gui_engine.c gui/gui_utils.c gui/gui_utils.h gui/config/gui_cheat.c gui/config/gui_cheat.h)
 set(HEADERS  ${CONFIG_HEADER}
         game_handler.h
         game.h
@@ -24,9 +24,9 @@ set(HEADERS  ${CONFIG_HEADER}
         helper.h
         storage.h
         gui/gui.h
-        gui/gui_game.c
+        gui/game/gui_game.c
         gui/gui_config.c
-        gui/gui_code.c gui/gui_game.h gui/gui_constants.h physics.h gui/gui_tools.h )
+        gui/game/gui_code.c gui/game/gui_game.h gui/gui_constants.h physics.h gui/gui_tools.h gui/game/gui_engine.h)
 
 include_directories(${PROJECT_SOURCE_DIR}/src/)
 add_library(transverse_lib STATIC ${LIB_SOURCES} ${HEADERS})

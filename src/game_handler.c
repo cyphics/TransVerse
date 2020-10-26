@@ -13,7 +13,7 @@
 #include "storage.h"
 #include "physics.h"
 #include "gui/gui.h"
-#include "gui/gui_game.h"
+#include "gui/game/gui_game.h"
 
 UpgradesHandleList AvailableUpgrades = {};
 

@@ -5,6 +5,7 @@
 #ifndef TRANSVERSE_GUI_GAME_H
 #define TRANSVERSE_GUI_GAME_H
 
-void DrawGame(int posX, int posY);
+void InitGameUI(int posX, int posY);
+void DrawGame();
 
 #endif //TRANSVERSE_GUI_GAME_H

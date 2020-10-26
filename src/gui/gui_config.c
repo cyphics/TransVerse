@@ -14,6 +14,8 @@
 #include "gui.h"
 #include "gui_constants.h"
 #include "gui_tools.h"
+#include "../physics.h"
+#include "config/gui_cheat.h"
 
 Font font;
 float fontSize = FONT_SIZE;
@@ -29,23 +31,7 @@ Rectangle configTabRect;
 char *configTabEntries[2] = {"Config", "Cheat"};
 int configTabSelectedEntry = 1;
 
-// CHEAT TAB
-Rectangle   speedLabelRect;
-Rectangle   speedValueRect;
-char        speedValueString[64] = "0";
-bool        speedValueEditMode = false;
-Rectangle   speedDropdownUnitRect;
-bool        speedDropdownEditMode = false;
-int         speedDropdownActive = 0;
-Rectangle   speedSetButtonRect;
-Rectangle   speedAddButtonRect;
 
-Rectangle accelerationCheatLabelRect;
-Rectangle accelerationCheatEditRect;
-Rectangle accelerationCheatSetRect;
-Rectangle accelerationCheatAddRect;
-char accelerationCheatString[64] = "0";
-bool accelerationCheatEditMode = false;
 
 //const float FONT_SIZE = defaultFontSize * SCALE_FACTOR;
 const int numUpgrades = MAX_UPGRADES_AMOUNT;
@@ -69,24 +55,6 @@ const float selectUpgradeRectWidth = MAX_UPGRADE_NAME_LENGTH;
 const float selectMainRectWidth = selectUpgradeRectWidth + 2 * PADDING;
 const float selectMainRectHeight = TEXT_RECT_HEIGHT * numUpgrades + PADDING * (numUpgrades + 1);
 const float selectTypeTabWidth = selectMainRectWidth / 4;
-
-// Rectangle structRect = {anchorX,
-//                            anchorY - textRectHeight/2,
-//                            selectTypeTabWidth,
-//                            textRectHeight/2};
-// Rectangle scienceRect = {anchorX + selectTypeTabWidth,
-//                          anchorY - textRectHeight/2,
-//                          selectTypeTabWidth,
-//                          textRectHeight/2};Rectangle softwareRect = {anchorX + selectTypeTabWidth * 2,
-//                                                                      anchorY - textRectHeight/2,
-//                                                                      selectTypeTabWidth,
-//                                                                      textRectHeight/2};
-// Rectangle incrementalRect = {anchorX + selectTypeTabWidth * 3,
-//                              anchorY - textRectHeight/2,
-//                              selectTypeTabWidth, textRectHeight/2};
-
-// Rectangle selectMainRect = {anchorX, anchorY,
-//                             selectMainRectWidth, selectMainRectHeight};
 
 const float addButtonWidth = 20;
 Rectangle addUpgradeButton;
@@ -150,33 +118,6 @@ Interact *editFieldsList[] = {&editNameInteract,
                               &editResourceInteract,
                               &editAmountInteract,
                               &editBoughtInteract};
-
-struct DropDownMenu {
-    char *destination;
-    const char **items_list;
-    int num_items;
-    Rectangle rect;
-    bool visible;
-} DropDownMenu;
-
-// GuiDMProperty prop[] = {
-//     PBOOL("Bool", 0, true),
-//     PSECTION("#102#SECTION", 0, 2),
-//     PINT("Int", 0, 123),
-//     PFLOAT("Float", 0, 0.99f),
-//     PTEXT("Text", 0, (char*)&(char[30]){"Hello!"}, 30),
-//     PSELECT("Select", 0, "ONE;TWO;THREE;FOUR", 0),
-//     PINT_RANGE("Int Range", 0, 32, 1, 0, 100),
-//     PRECT("Rect", 0, 0, 0, 100, 200),
-//     PVEC2("Vec2", 0, 20, 20),
-//     PVEC3("Vec3", 0, 12, 13, 14),
-//     PVEC4("Vec4", 0, 12, 13, 14, 15),
-//     PCOLOR("Color", 0, 0, 255, 0, 255),
-// };
-
-void initiateUI();
-
-void buildUI();
 
 void BuildSelectUpgradesList(char *newTypeList) {
     currentTypeList = newTypeList;
@@ -306,111 +247,14 @@ void DrawGameState() {
     sprintf(elapsedTime, "Elapsed time: %.1f", game_state.elapsed_time);
 }
 
-void DrawCheatsTab() {
 
-    GuiDrawText("Speed: ", speedLabelRect, GUI_TEXT_ALIGN_LEFT, BLACK);
-    if (GuiTextEdit(speedValueRect, speedValueString, speedValueEditMode)) speedValueEditMode = !speedValueEditMode;
-    if (GuiButton(speedSetButtonRect, "SET")) {
-        if (IsStringValidFloat(speedValueString)) {
-            game_state.current_speed = StringToFloat(speedValueString);
-            printf("Speed set to %s!\n", speedValueString);
-        } else printf("Speed value %s of wrong format. Aborting conversion\n", speedValueString);
-    }
-    if (GuiButton(speedAddButtonRect, "ADD")) {
-        if (IsStringValidFloat(speedValueString)) {
-            game_state.current_speed += StringToFloat(speedValueString);
-            printf("Speed added by %s!\n", speedValueString);
-        } else printf("Speed value %s of wrong format. Aborting conversion\n", speedValueString);
-    }
-
-    GuiDrawText("Acceleration: ", accelerationCheatLabelRect, GUI_TEXT_ALIGN_LEFT, BLACK);
-    if (GuiTextEdit(accelerationCheatEditRect, accelerationCheatString, accelerationCheatEditMode))
-        accelerationCheatEditMode = !accelerationCheatEditMode;
-    if (GuiButton(accelerationCheatSetRect, "SET")) {
-        if (IsStringValidFloat(accelerationCheatString)) {
-            game_state.current_acceleration = StringToFloat(accelerationCheatString);
-            printf("acceleration set to %s!\n", accelerationCheatString);
-        } else printf("acceleration value %s of wrong format. Aborting conversion\n", accelerationCheatString);
-    }
-    if (GuiButton(accelerationCheatAddRect, "ADD")) {
-        if (IsStringValidFloat(accelerationCheatString)) {
-            game_state.current_acceleration += StringToFloat(accelerationCheatString);
-            printf("acceleration added by %s!\n", accelerationCheatString);
-        } else printf("acceleration value %s of wrong format. Aborting conversion\n", accelerationCheatString);
-    }
-
-    if(GuiDropdownBox(speedDropdownUnitRect, "One;Two", &speedDropdownActive, speedDropdownEditMode)) speedDropdownEditMode = !speedDropdownEditMode;
-}
-
-void DrawConfigPanel(int posX, int poxY) {
-    if (!initDone) {
-        initiateUI(posX, poxY);
-    }
-
-    configTabSelectedEntry = GuiTabs(configTabRect, configTabEntries,
-                                     sizeof(configTabEntries) / sizeof(configTabEntries[0]), configTabSelectedEntry);
-
-    switch (configTabSelectedEntry) {
-        case 0:
-//            DrawStaticContent();
-            break;
-        case 1:
-            DrawCheatsTab();
-            break;
-        default:
-            break;
-    }
-}
-
-
-void initiateUI(int posX, int poxY) {
-    buildUI(posX, poxY);
-
-    BuildSelectUpgradesList("structure");
-    SelectCurrentUpgrade(&game_state.upgrades_list[0]);
-    font = GetFontDefault();
-    for (int i = 0; i < sizeof(editFieldsList) / sizeof(editFieldsList[0]); ++i) {
-        editFieldsList[i]->fontSize = fontSize;
-    }
-    initDone = true;
-}
 
 void buildUI(int posX, int poxY) {
     anchorY = poxY;
     anchorX = posX;
     configTabRect = (Rectangle) {posX + PADDING, poxY + PADDING, 300, 30};
 
-    // CHEAT
-    float line_height = 30.0f;
-    int label_width = 70;
 
-    speedLabelRect = (Rectangle) {posX + 40, poxY + 40,
-                                  label_width, line_height};
-    speedValueRect = (Rectangle) {speedLabelRect.x + speedLabelRect.width + PADDING,
-                                  speedLabelRect.y,
-                                  50, line_height};
-    speedDropdownUnitRect = (Rectangle) {speedValueRect.x + speedValueRect.width + PADDING,
-                                         speedValueRect.y,
-                                         100, line_height};
-    speedSetButtonRect = (Rectangle) {speedDropdownUnitRect.x + speedDropdownUnitRect.width + PADDING,
-                                      speedDropdownUnitRect.y,
-                                      40, line_height};
-    speedAddButtonRect = (Rectangle) {speedSetButtonRect.x + speedSetButtonRect.width + PADDING,
-                                      speedSetButtonRect.y,
-                                      40, line_height};
-
-    accelerationCheatLabelRect = (Rectangle) {speedLabelRect.x,
-                                              speedLabelRect.y + speedLabelRect.height + 20,
-                                              label_width, line_height};
-    accelerationCheatEditRect = (Rectangle) {accelerationCheatLabelRect.x + accelerationCheatLabelRect.width + PADDING,
-                                             accelerationCheatLabelRect.y,
-                                             50, line_height};
-    accelerationCheatSetRect = (Rectangle) {accelerationCheatEditRect.x + accelerationCheatEditRect.width + PADDING,
-                                            accelerationCheatEditRect.y,
-                                            40, line_height};
-    accelerationCheatAddRect = (Rectangle) {accelerationCheatSetRect.x + accelerationCheatSetRect.width + PADDING,
-                                            accelerationCheatSetRect.y,
-                                            40, line_height};
 
     // CONFIG
     float displayRectXAnchor = posX + MAX_UPGRADE_NAME_LENGTH + 20 * SCALE_FACTOR;
@@ -469,4 +313,34 @@ void buildUI(int posX, int poxY) {
                             saveWidth, 30};
     addUpgradeButton = (Rectangle) {posX, 0,
                                     addButtonWidth, addButtonWidth};
+}
+
+
+void InitConfigUI(int posX, int posY) {
+    InitCheatUI(posX + 40, posY + 80);
+    buildUI(posX, posY);
+
+    BuildSelectUpgradesList("structure");
+    SelectCurrentUpgrade(&game_state.upgrades_list[0]);
+    font = GetFontDefault();
+    for (int i = 0; i < sizeof(editFieldsList) / sizeof(editFieldsList[0]); ++i) {
+        editFieldsList[i]->fontSize = fontSize;
+    }
+    initDone = true;
+}
+
+void DrawConfigPanel(int posX, int poxY) {
+    configTabSelectedEntry = GuiTabs(configTabRect, configTabEntries,
+                                     sizeof(configTabEntries) / sizeof(configTabEntries[0]), configTabSelectedEntry);
+
+    switch (configTabSelectedEntry) {
+        case 0:
+//            DrawStaticContent();
+            break;
+        case 1:
+            DrawCheatsTab();
+            break;
+        default:
+            break;
+    }
 }

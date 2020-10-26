@@ -45,12 +45,12 @@ void TimeToStr(char *str_ptr, u_time t)
 
   double total_double = t;
 
-  float galac_year = total_double / time_std.galactic_year.value;
+  float galac_year = total_double / time_std.id.galactic_year.value;
 
   if (galac_year >= 0.1)
     {
       sprintf(str_ptr, "%.2g ", galac_year);
-      strcat( str_ptr, time_std.galactic_year.name);
+      strcat( str_ptr, time_std.id.galactic_year.name);
       return;
     }
 
@@ -61,14 +61,14 @@ void TimeToStr(char *str_ptr, u_time t)
   int days = 0;
   int years = 0;
 
-  years = (total / time_std.year.value);
-  total %= (long)time_std.year.value;   // TODO check dangerous (long) cast
-  days = floor(total / time_std.day.value);
-  total %= (long)time_std.day.value;
-  hours = floor(total/time_std.hour.value);
-  total %= (long)time_std.hour.value;
-  minutes = floor(total/time_std.minute.value);
-  total %= (long)time_std.minute.value;
+  years = (total / time_std.id.year.value);
+  total %= (long)time_std.id.year.value;   // TODO check dangerous (long) cast
+  days = floor(total / time_std.id.day.value);
+  total %= (long)time_std.id.day.value;
+  hours = floor(total/time_std.id.hour.value);
+  total %= (long)time_std.id.hour.value;
+  minutes = floor(total/time_std.id.minute.value);
+  total %= (long)time_std.id.minute.value;
   seconds = total;
 
   char years_str[TIME_SEGMENT_SIZE];

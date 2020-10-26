@@ -26,8 +26,89 @@ Color hovered = LIGHTGRAY;
 Color unhovered = RAYWHITE;
 int framesCounter = 0;
 
+//----------------------------------------------------------------------------------
+// Defines and Macros
+//----------------------------------------------------------------------------------
+#define NUM_CONTROLS                    16      // Number of standard controls
+#define NUM_PROPS_DEFAULT               16      // Number of standard properties
+#define NUM_PROPS_EXTENDED               8      // Number of extended properties
+
+#define TEXTEDIT_CURSOR_BLINK_FRAMES    20      // Text edit controls cursor blink timming
+
+// Gui control text alignment
+typedef enum {
+    GUI_TEXT_ALIGN_LEFT = 0,
+    GUI_TEXT_ALIGN_CENTER,
+    GUI_TEXT_ALIGN_RIGHT,
+} GuiTextAlignment;
+
+// DEFAULT properties
+typedef enum {
+    TEXT_SIZE = 16,
+    TEXT_SPACING,
+    LINE_COLOR,
+    BACKGROUND_COLOR,
+} GuiDefaultProperty;
+
+// Gui controls
+typedef enum {
+    DEFAULT = 0,
+    LABEL,          // LABELBUTTON
+    BUTTON,         // IMAGEBUTTON
+    DROPDOWNBOX,
+    TEXTBOX,        // TEXTBOXMULTI
+    VALUEBOX,
+    SPINNER,
+    LISTVIEW
+} GuiControl;
+
+// Gui base properties for every control
+typedef enum {
+    BORDER_COLOR_NORMAL = 0,
+    BASE_COLOR_NORMAL,
+    TEXT_COLOR_NORMAL,
+    BORDER_COLOR_FOCUSED,
+    BASE_COLOR_FOCUSED,
+    TEXT_COLOR_FOCUSED,
+    BORDER_COLOR_PRESSED,
+    BASE_COLOR_PRESSED,
+    TEXT_COLOR_PRESSED,
+    BORDER_COLOR_DISABLED,
+    BASE_COLOR_DISABLED,
+    TEXT_COLOR_DISABLED,
+    BORDER_WIDTH,
+    TEXT_PADDING,
+    TEXT_ALIGNMENT,
+    RESERVED
+} GuiControlProperty;
+
+// TextBox / TextBoxMulti / ValueBox / Spinner
+typedef enum {
+    TEXT_INNER_PADDING = 16
+} GuiTextBoxProperty;
+
+// DropdownBox
+typedef enum {
+    ARROW_PADDING = 16,
+    DROPDOWN_ITEMS_PADDING
+} GuiDropdownBoxProperty;
+
+// Gui control property style color element
+typedef enum { BORDER = 0, BASE, TEXT, OTHER } GuiPropertyElement;
+
+static Font guiFont = { 0 };            // Gui current font (WARNING: highly coupled to raylib)
+static float guiAlpha = 1.0f;           // Gui element transpacency on drawing
+
+static bool guiStyleLoaded = false;     // Style loaded flag for lazy style initialization
+static unsigned int guiStyle[NUM_CONTROLS*(NUM_PROPS_DEFAULT + NUM_PROPS_EXTENDED)] = { 0 };
+
+
 // Set control style property value
-void GuiSetStyle(int control, int property, int value) {
+
+static void GuiSetStyle(int control, int property, int value);
+static void GuiLoadStyleDefault(void);
+
+static void GuiSetStyle(int control, int property, int value) {
     if (!guiStyleLoaded) GuiLoadStyleDefault();
     guiStyle[control * (NUM_PROPS_DEFAULT + NUM_PROPS_EXTENDED) + property] = value;
 
@@ -37,9 +118,7 @@ void GuiSetStyle(int control, int property, int value) {
             guiStyle[i * (NUM_PROPS_DEFAULT + NUM_PROPS_EXTENDED) + property] = value;
     }
 }
-// Get control style property value
-
-void GuiLoadStyleDefault(void) {
+static void GuiLoadStyleDefault(void) {
     // We set this variable first to avoid cyclic function calls
     // when calling GuiSetStyle() and GuiGetStyle()
     guiStyleLoaded = true;
@@ -79,6 +158,8 @@ void GuiLoadStyleDefault(void) {
     GuiSetStyle(DROPDOWNBOX, ARROW_PADDING, 16);
     guiFont = GetFontDefault();     // Initialize default font
 }
+
+// Get control style property value
 
 int GuiGetStyle(int control, int property) {
     if (!guiStyleLoaded) GuiLoadStyleDefault();
@@ -132,6 +213,69 @@ void DrawHoverable(Rectangle bounds, GuiControlState state) {
         alpha = 0.2f;
     }
     DrawRectangle(bounds.x, bounds.y, bounds.width, bounds.height, Fade(BLUE, alpha));
+}
+
+// Gui draw text using default font
+void GuiDrawText(const char *text, Rectangle bounds, int alignment, Color tint) {
+#define TEXT_VALIGN_PIXEL_OFFSET(h)  ((int)h%2)     // Vertical alignment for pixel perfect
+
+    if ((text != NULL) && (text[0] != '\0')) {
+        Vector2 position = {bounds.x, bounds.y};
+
+        // NOTE: We get text size after icon been processed
+        int textWidth = GetTextWidth(text);
+        int textHeight = GuiGetStyle(DEFAULT, TEXT_SIZE);
+
+        // Check guiTextAlign global variables
+        switch (alignment) {
+            case GUI_TEXT_ALIGN_LEFT: {
+                position.x = bounds.x;
+                position.y = bounds.y + bounds.height / 2 - textHeight / 2 + TEXT_VALIGN_PIXEL_OFFSET(bounds.height);
+            }
+                break;
+            case GUI_TEXT_ALIGN_CENTER: {
+                position.x = bounds.x + bounds.width / 2 - textWidth / 2;
+                position.y = bounds.y + bounds.height / 2 - textHeight / 2 + TEXT_VALIGN_PIXEL_OFFSET(bounds.height);
+            }
+                break;
+            case GUI_TEXT_ALIGN_RIGHT: {
+                position.x = bounds.x + bounds.width - textWidth;
+                position.y = bounds.y + bounds.height / 2 - textHeight / 2 + TEXT_VALIGN_PIXEL_OFFSET(bounds.height);
+            }
+                break;
+            default:
+                break;
+        }
+
+        // NOTE: Make sure we get pixel-perfect coordinates,
+        // In case of decimals we got weird text positioning
+        position.x = (float) ((int) position.x);
+        position.y = (float) ((int) position.y);
+
+        DrawTextEx(guiFont, text, position, GuiGetStyle(DEFAULT, TEXT_SIZE), GuiGetStyle(DEFAULT, TEXT_SPACING), tint);
+        //---------------------------------------------------------------------------------
+    }
+}
+
+// Gui draw rectangle using default raygui plain style with borders
+static void GuiDrawRectangle(Rectangle bounds, int borderWidth, Color borderColor, Color color) {
+    if (color.a > 0) {
+        // Draw rectangle filled with color
+//        DrawRectangle(bounds.x, bounds.y, bounds.width, bounds.height, color);
+        DrawRectangleRec(bounds, color);
+    }
+
+    if (borderWidth > 0) {
+        // Draw rectangle border lines with color
+        DrawRectangle(bounds.x, bounds.y, bounds.width, borderWidth, borderColor);
+        DrawRectangle(bounds.x, bounds.y + borderWidth, borderWidth, bounds.height - 2 * borderWidth, borderColor);
+        DrawRectangle(bounds.x + bounds.width - borderWidth, bounds.y + borderWidth, borderWidth, bounds.height - 2 * borderWidth,
+                      borderColor);
+        DrawRectangle(bounds.x, bounds.y + bounds.height - borderWidth, bounds.width, borderWidth, borderColor);
+    }
+
+    // TODO: For n-patch-based style we would need: [state] and maybe [control]
+    // In this case all controls drawing logic should be moved to this function... I don't like it...
 }
 
 bool GuiTextEdit(Rectangle bounds, char *text, bool editMode) {
@@ -232,68 +376,6 @@ bool GuiTextEdit(Rectangle bounds, char *text, bool editMode) {
     return pressed;
 }
 
-// Gui draw text using default font
-void GuiDrawText(const char *text, Rectangle bounds, int alignment, Color tint) {
-#define TEXT_VALIGN_PIXEL_OFFSET(h)  ((int)h%2)     // Vertical alignment for pixel perfect
-
-    if ((text != NULL) && (text[0] != '\0')) {
-        Vector2 position = {bounds.x, bounds.y};
-
-        // NOTE: We get text size after icon been processed
-        int textWidth = GetTextWidth(text);
-        int textHeight = GuiGetStyle(DEFAULT, TEXT_SIZE);
-
-        // Check guiTextAlign global variables
-        switch (alignment) {
-            case GUI_TEXT_ALIGN_LEFT: {
-                position.x = bounds.x;
-                position.y = bounds.y + bounds.height / 2 - textHeight / 2 + TEXT_VALIGN_PIXEL_OFFSET(bounds.height);
-            }
-                break;
-            case GUI_TEXT_ALIGN_CENTER: {
-                position.x = bounds.x + bounds.width / 2 - textWidth / 2;
-                position.y = bounds.y + bounds.height / 2 - textHeight / 2 + TEXT_VALIGN_PIXEL_OFFSET(bounds.height);
-            }
-                break;
-            case GUI_TEXT_ALIGN_RIGHT: {
-                position.x = bounds.x + bounds.width - textWidth;
-                position.y = bounds.y + bounds.height / 2 - textHeight / 2 + TEXT_VALIGN_PIXEL_OFFSET(bounds.height);
-            }
-                break;
-            default:
-                break;
-        }
-
-        // NOTE: Make sure we get pixel-perfect coordinates,
-        // In case of decimals we got weird text positioning
-        position.x = (float) ((int) position.x);
-        position.y = (float) ((int) position.y);
-
-        DrawTextEx(guiFont, text, position, GuiGetStyle(DEFAULT, TEXT_SIZE), GuiGetStyle(DEFAULT, TEXT_SPACING), tint);
-        //---------------------------------------------------------------------------------
-    }
-}
-
-// Gui draw rectangle using default raygui plain style with borders
-static void GuiDrawRectangle(Rectangle rec, int borderWidth, Color borderColor, Color color) {
-    if (color.a > 0) {
-        // Draw rectangle filled with color
-        DrawRectangle(rec.x, rec.y, rec.width, rec.height, color);
-    }
-
-    if (borderWidth > 0) {
-        // Draw rectangle border lines with color
-        DrawRectangle(rec.x, rec.y, rec.width, borderWidth, borderColor);
-        DrawRectangle(rec.x, rec.y + borderWidth, borderWidth, rec.height - 2 * borderWidth, borderColor);
-        DrawRectangle(rec.x + rec.width - borderWidth, rec.y + borderWidth, borderWidth, rec.height - 2 * borderWidth,
-                      borderColor);
-        DrawRectangle(rec.x, rec.y + rec.height - borderWidth, rec.width, borderWidth, borderColor);
-    }
-
-    // TODO: For n-patch-based style we would need: [state] and maybe [control]
-    // In this case all controls drawing logic should be moved to this function... I don't like it...
-}
-
 bool GuiButton(Rectangle bounds, const char *text) {
     GuiControlState state = GUI_STATE_NORMAL;
     bool pressed = false;
@@ -322,15 +404,6 @@ bool GuiButton(Rectangle bounds, const char *text) {
     //------------------------------------------------------------------
 
     return pressed;
-}
-
-void GuiLabelBox(int posX, int posY, char *label, char *content) {
-    int fontSize = FONT_SIZE;
-    DrawText(label, posX, posY, fontSize, BLACK);
-    int text_size = MeasureText(label, fontSize);
-    int spacing = 10;
-    DrawLine(posX + text_size + spacing, posY, posX + text_size, posY + 10, LIGHTGRAY);
-    DrawText(content, posX + text_size + spacing * 2, posY, fontSize, LIGHTGRAY);
 }
 
 int GuiTabs(Rectangle bounds, char **entries, int num_entries, int current_entry) {
@@ -533,4 +606,20 @@ bool GuiDropdownBox(Rectangle bounds, const char *text, int *active, bool editMo
 
     *active = itemSelected;
     return pressed;
+}
+
+// Label control
+void GuiLabel(Rectangle bounds, const char *text)
+{
+    GuiControlState state = GUI_STATE_NORMAL;
+
+    // Update control
+    //--------------------------------------------------------------------
+    // ...
+    //--------------------------------------------------------------------
+
+    // Draw control
+    //--------------------------------------------------------------------
+    GuiDrawText(text, GetTextBounds(LABEL, bounds), GuiGetStyle(LABEL, TEXT_ALIGNMENT), Fade(GetColor(GuiGetStyle(LABEL, (state == GUI_STATE_DISABLED)? TEXT_COLOR_DISABLED : TEXT_COLOR_NORMAL)), guiAlpha));
+    //--------------------------------------------------------------------
 }

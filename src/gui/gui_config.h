@@ -10,6 +10,7 @@
 #include "gui.h"
 #include "../game.h"
 
+void InitConfigUI(int posX, int posY);
 void DrawConfigPanel(int posX, int posY);
 //void DrawInteract(Interact tr);
 
