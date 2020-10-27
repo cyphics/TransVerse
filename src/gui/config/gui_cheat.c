@@ -23,18 +23,30 @@ struct ConfigLine {
     Rectangle bounds;
 } ConfigLine = {"", "", false, 0, false};
 
-struct ConfigLine speedLine;
+static struct ConfigLine speedLine;
 struct ConfigLine accelerationLine;
+struct ConfigLine distanceLine;
+int mult_counter = 0;
 
 void InitCheatUI(int posX, int posY) {
     strcat(speedLine.label, "Speed: ");
+    strcat(speedLine.valueString, "0");
     speedLine.bounds = (struct Rectangle) {posX, posY, 200, 30};;
     speedLine.game_value = &game_state.current_speed;
 
     strcat(accelerationLine.label, "Acceleration: ");
+    strcat(accelerationLine.valueString, "0");
     accelerationLine.bounds = speedLine.bounds;
     accelerationLine.bounds.y += 50.0f;
     accelerationLine.game_value = &game_state.current_acceleration;
+
+    strcat(distanceLine.label, "Distance: ");
+    strcat(distanceLine.valueString, "0");
+    distanceLine.bounds = accelerationLine.bounds;
+    distanceLine.bounds.y += 50.0f;
+    distanceLine.game_value = &game_state.traveled_distance;
+
+
 }
 
 void DrawConfigLine(struct ConfigLine *line) {
@@ -55,18 +67,29 @@ void DrawConfigLine(struct ConfigLine *line) {
                                            SetButtonRect.y,
                                            40, line_height};
 
+    Rectangle MultiplyButtonRect = (Rectangle) {AddButtonRect.x + AddButtonRect.width + PADDING,
+                                                AddButtonRect.y,
+                                                40, line_height};
+
     GuiLabel(LabelRect, line->label);
     if (GuiTextEdit(ValueRect, line->valueString, line->valueEditMode)) line->valueEditMode = !line->valueEditMode;
     if (GuiButton(SetButtonRect, "SET")) {
-        if (IsStringValidFloat(line->valueString)) {
-            *(line->game_value) = StringToFloat(line->valueString) * distance_std.list[line->dropDownActive].value;
+        if (IsStringValidDouble(line->valueString)) {
+            *(line->game_value) = StringToDouble(line->valueString) * distance_std.list[line->dropDownActive].value;
             printf(" set to %s!\n", line->valueString);
         } else printf(" value %s of wrong format. Aborting conversion\n", line->valueString);
     }
     if (GuiButton(AddButtonRect, "ADD")) {
-        if (IsStringValidFloat(line->valueString)) {
-            *line->game_value += StringToFloat(line->valueString) * distance_std.list[line->dropDownActive].value;
+        if (IsStringValidDouble(line->valueString)) {
+            *line->game_value += StringToDouble(line->valueString) * distance_std.list[line->dropDownActive].value;
             printf(" added by %s!\n", line->valueString);
+        } else printf(" value %s of wrong format. Aborting conversion\n", line->valueString);
+    }
+    if (GuiButton(MultiplyButtonRect, "MULT")) {
+        if (IsStringValidDouble(line->valueString)) {
+            *line->game_value *= StringToDouble(line->valueString);
+            mult_counter++;
+            printf(" multiply by %s for the %d time!\n", line->valueString, mult_counter);
         } else printf(" value %s of wrong format. Aborting conversion\n", line->valueString);
     }
 
@@ -76,39 +99,9 @@ void DrawConfigLine(struct ConfigLine *line) {
 }
 
 void DrawCheatsTab() {
-
+    DrawConfigLine(&distanceLine);
     DrawConfigLine(&accelerationLine);
     DrawConfigLine(&speedLine);
-//    GuiLabel(speedLabelRect, "Speed: ");
-//    if (GuiTextEdit(speedValueRect, speedValueString, speedValueEditMode)) speedValueEditMode = !speedValueEditMode;
-//    if (GuiButton(speedSetButtonRect, "SET")) {
-//        if (IsStringValidFloat(speedValueString)) {
-//            game_state.current_speed = StringToFloat(speedValueString) * distance_std.list[speedDropdownActive].value;
-//            printf("Speed set to %s!\n", speedValueString);
-//        } else printf("Speed value %s of wrong format. Aborting conversion\n", speedValueString);
-//    }
-//    if (GuiButton(speedAddButtonRect, "ADD")) {
-//        if (IsStringValidFloat(speedValueString)) {
-//            game_state.current_speed += StringToFloat(speedValueString) * distance_std.list[speedDropdownActive].value;
-//            printf("Speed added by %s!\n", speedValueString);
-//        } else printf("Speed value %s of wrong format. Aborting conversion\n", speedValueString);
-//    }
-//
-//    GuiLabel(accelerationCheatLabelRect, "Acceleration: ");
-//    if (GuiTextEdit(accelerationCheatEditRect, accelerationCheatString, accelerationCheatEditMode))
-//        accelerationCheatEditMode = !accelerationCheatEditMode;
-//    if (GuiButton(accelerationCheatSetRect, "SET")) {
-//        if (IsStringValidFloat(accelerationCheatString)) {
-//            game_state.current_acceleration = StringToFloat(accelerationCheatString);
-//            printf("acceleration set to %s!\n", accelerationCheatString);
-//        } else printf("acceleration value %s of wrong format. Aborting conversion\n", accelerationCheatString);
-//    }
-//    if (GuiButton(accelerationCheatAddRect, "ADD")) {
-//        if (IsStringValidFloat(accelerationCheatString)) {
-//            game_state.current_acceleration += StringToFloat(accelerationCheatString);
-//            printf("acceleration added by %s!\n", accelerationCheatString);
-//        } else printf("acceleration value %s of wrong format. Aborting conversion\n", accelerationCheatString);
-//    }
 
-//    if(GuiDropdownBox(speedDropdownUnitRect, speedUnitsList, &speedDropdownActive, speedDropdownEditMode)) speedDropdownEditMode = !speedDropdownEditMode;
+
 }

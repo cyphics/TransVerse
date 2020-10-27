@@ -7,6 +7,7 @@
 
 #include <time.h>
 #include <stdlib.h>
+#include <string.h>
 #include "helper.h"
 
 bool AreStrEquals(char *ch1, char *ch2) {
@@ -34,13 +35,13 @@ bool IsTimerRunning(Timer *t) {
     return true;
 }
 
-bool IsStringValidFloat(char *str)
+bool IsStringValidDouble(char *str)
 {
     char *char_stop;
-    strtof(str, &char_stop);
+    strtod(str, &char_stop);
     return (*char_stop == '\0');
 }
 
-float StringToFloat(char *str) {
+double StringToDouble(char *str) {
     return atof(str);
 }

@@ -51,4 +51,5 @@ GameState BuildGameConfig(const upgrade up_list[], int number_upgrades, const re
 u_speed GetCurrentSpeed();
 u_distance GetTraveledDistance();
 u_acceleration GetCurrentAcceleration();
+u_time GetRemainingTime();
 #endif //TRANSVERSE_GAME_H

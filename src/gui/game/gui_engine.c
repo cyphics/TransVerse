@@ -10,57 +10,101 @@
 #include "../gui_tools.h"
 #include "../gui_utils.h"
 
-//static char speedUnitsList[150];
+struct DataLine {
+    char label[30];
+    struct Rectangle bounds;
+    int dropDownActive;
+    bool dropDownEdit;
+} DataLine;
 
-static Rectangle mainDataRect;
-static Rectangle speedLabelRect;
-static Rectangle speedValueRect;
-static Rectangle speedUnitDropdownRect;
-static int speedDropDownActive = 0;
-static bool speedDropdownEdit = false;
-static Rectangle speedUnitRect;
+static struct DataLine speedLine;
+static struct DataLine accelerationLine;
+static struct DataLine distanceLine;
+static struct DataLine milestoneLine;
+
+static Rectangle remainingTimeLabelRect;
+static Rectangle remainingTimeValueRect;
 
 static Rectangle milestonesRect;
+static Rectangle mainDataRect;
+
+void DrawDataLine(struct DataLine *line, u_phys value) {
+    float label_width = 120;
+    float value_width = 60;
+    float unit_select_width = 100;
+    float unit_width = 20;
+    float line_height = line->bounds.height;
+    Rectangle labelRect = {line->bounds.x, line->bounds.y, label_width, line_height};
+    Rectangle valueRect = {labelRect.x + labelRect.width + PADDING, line->bounds.y, value_width, line_height};
+    Rectangle unitDropdownRect = {valueRect.x + valueRect.width + PADDING, line->bounds.y, unit_select_width,
+                                  line_height};
+    Rectangle unitRect = {unitDropdownRect.x + unitDropdownRect.width + PADDING, line->bounds.y, unit_width,
+                          line_height};
+
+
+    char data_to_string[100];
+
+    sprintf(data_to_string, "%.3e", value / distance_std.list[line->dropDownActive].value);
+    GuiLabel(labelRect, line->label);
+    GuiLabel(valueRect, data_to_string);
+    GuiLabel(unitRect, "/ second");
+
+    if (GuiDropdownBox(unitDropdownRect, DistanceUnitsListString, &line->dropDownActive, line->dropDownEdit))
+        line->dropDownEdit = !line->dropDownEdit;
+}
 
 void InitEngineScreen(int posX, int posY) {
     mainDataRect = (Rectangle) {posX + PADDING, posY + PADDING,
-                                300, 100};
-    float labelWidth = 80;
-    float value_width = 250;
-    float unit_select_width = 80;
-    float unit_width = 20;
+                                380, 180};
+    milestonesRect = (Rectangle) {mainDataRect.x + 400, mainDataRect.y + PADDING,
+                                  360, 600};
+
     float line_height = 30;
-    speedLabelRect = (Rectangle) {mainDataRect.x + PADDING, mainDataRect.y + PADDING,
-                                  labelWidth, line_height};
-    speedValueRect = (Rectangle) {speedLabelRect.x + speedLabelRect.width + PADDING, mainDataRect.y + PADDING,
-                                  value_width, line_height};
-    speedUnitDropdownRect = (Rectangle) {speedValueRect.x + speedValueRect.width + PADDING, mainDataRect.y + PADDING,
-                                         unit_select_width, line_height};
-    speedUnitRect = (Rectangle) {speedUnitDropdownRect.x + speedUnitDropdownRect.width + PADDING,
-                                 mainDataRect.y + PADDING,
-                                 unit_width, line_height};
+
+    speedLine.bounds = (Rectangle) {mainDataRect.x + PADDING, mainDataRect.y + PADDING,
+                                    400, line_height};
+    strcat(speedLine.label, "Speed: ");
+
+    accelerationLine.bounds = speedLine.bounds;
+    accelerationLine.bounds.y += 40;
+    strcat(accelerationLine.label, "Acceleration: ");
+
+    distanceLine.bounds = accelerationLine.bounds;
+    distanceLine.bounds.y += 40;
+    strcat(distanceLine.label, "Distance: ");
+
+    remainingTimeLabelRect = distanceLine.bounds;
+    remainingTimeLabelRect.y += 40;
+    remainingTimeValueRect = remainingTimeLabelRect;
+    remainingTimeValueRect.x += 80;
 
 
-    milestonesRect = (Rectangle) {mainDataRect.x, mainDataRect.y + mainDataRect.height + PADDING,
-                                  300, 400};
+
+    milestoneLine.bounds.x = milestonesRect.x + PADDING;
+    milestoneLine.bounds.width = distanceLine.bounds.width;
+    milestoneLine.bounds.height = distanceLine.bounds.height;
+
 }
 
 void DrawEngine() {
     DrawRectangleLinesEx(mainDataRect, 1, BLACK);
     DrawRectangleLinesEx(milestonesRect, 1, BLACK);
 
-    int v_space = 20;
-    int x_pos = milestonesRect.x + PADDING;
-    char currentSpeed[100];
-    char currentAcceleration[20];
-    sprintf(currentSpeed, "%.30f", (float) GetCurrentSpeed() / distance_std.list[speedDropDownActive].value);
-    sprintf(currentAcceleration, "%.3f", (float) GetCurrentAcceleration());
-    GuiLabel(speedLabelRect, "Speed: ");
-    GuiLabel(speedValueRect, currentSpeed);
-    GuiLabel(speedUnitRect, "/ second");
-//    GuiLabelBox(x_pos, mainDataRect.y + PADDING, "Speed", currentSpeed);
-//    GuiLabelBox(x_pos, mainDataRect.y + v_space + PADDING, "Distance", "0m");
-//    GuiLabelBox(x_pos, mainDataRect.y + (v_space + PADDING) * 2, "Acceleration", currentAcceleration);
-    if (GuiDropdownBox(speedUnitDropdownRect, DistanceUnitsListString, &speedDropDownActive, speedDropdownEdit))speedDropdownEdit = !speedDropdownEdit;
+    GuiLabel(remainingTimeLabelRect, "Remaining time: ");
+    u_time remaining_time = GetRemainingTime();
+    char time_to_str[100];
+    TimeToStr(time_to_str, remaining_time);
+//    sprintf(time_to_str, "%f", remaining_time);
+    GuiLabel(remainingTimeValueRect, time_to_str);
+    DrawDataLine(&distanceLine, GetTraveledDistance());
+    DrawDataLine(&accelerationLine, GetCurrentAcceleration());
+    DrawDataLine(&speedLine, GetCurrentSpeed());
 
+    int num_milestones = sizeof(dist_mstone.list) / sizeof(dist_mstone.list[0]);
+    milestoneLine.bounds.y = milestonesRect.y + PADDING;
+    for (int i = 0; i < num_milestones; ++i) {
+        strcpy(milestoneLine.label, dist_mstone.list[i].name);
+        DrawDataLine(&milestoneLine, GetTraveledDistance() / dist_mstone.list[i].value);
+        milestoneLine.bounds.y += 40;
+    }
 }

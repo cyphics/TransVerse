@@ -13,10 +13,8 @@
 #include "../game_handler.h"
 #include "gui_utils.h"
 
-#define GAME_X_ANCHOR 800
+#define GAME_X_ANCHOR 600
 #define GAME_Y_ANCHOR 0
-
-char some_text[100] = "Some text";
 
 void InitGui(){
     CreateDistanceUnitsList();
@@ -29,13 +27,13 @@ void StartGui() {
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Transverse");
     InitGui();
     while (!WindowShouldClose()) {
-        // Wait((u_time)GetFrameTime()); // TODO make sure cast is ok
+        float last_frame_time = GetFrameTime();
+        Wait(last_frame_time);
         BeginDrawing();
         {
-            float last_frame_time = GetFrameTime();
-            Wait(last_frame_time);
+
             ClearBackground(RAYWHITE);
-            DrawLineEx((Vector2) {800, 0}, (Vector2) {800, 600}, 1, LIGHTGRAY);
+            DrawLineEx((Vector2) {600, 0}, (Vector2) {600, 600}, 1, LIGHTGRAY);
             DrawConfigPanel(0, 0);
             DrawGame();
         }

@@ -5,7 +5,9 @@
    $Creator: Thierry Raeber$
    ======================================================================== */
 
+#include <string.h>
 #include "game.h"
+#include "physics.h"
 
 GameState game_state = {};
 
@@ -25,4 +27,8 @@ u_distance GetTraveledDistance(){
 }
 u_acceleration GetCurrentAcceleration(){
     return game_state.current_acceleration;
+}
+
+u_time GetRemainingTime() {
+    return RemainingTime(dist_mstone.id.universe_diamete.value, GetCurrentSpeed(), GetCurrentAcceleration());
 }

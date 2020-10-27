@@ -22,12 +22,7 @@
 #include "gui_engine.h"
 #include "../gui_utils.h"
 
-bool isGameGuiInit = false;
-
 extern Vector2 mousePosition;
-bool mouseLeftPressed = false;
-
-int currentPanel = EDITOR_TAB;
 
 const float tabHeight = 30;
 
@@ -185,9 +180,9 @@ void DrawTerminal() {
 void InitGameUI(int posX, int posY) {
 
     mainPanelRect = (Rectangle) {posX + PADDING, posY + PADDING,
-                                 800 - PADDING * 2, 500 - PADDING * 2};
+                                 800 - PADDING * 2, 400 - PADDING * 2};
     subPanelRect = (Rectangle) {posX + PADDING, posY + PADDING + tabHeight + PADDING * 2,
-                                800 - PADDING * 2, 560 - PADDING * 2};
+                                800 - PADDING * 2, 640 - PADDING * 2};
 
 
     InitEngineScreen(subPanelRect.x + PADDING, subPanelRect.y + PADDING);
@@ -223,16 +218,11 @@ void InitGameUI(int posX, int posY) {
 
 //    ResizeEditor(availUpgradesRect.x + availUpgradesRect.width + padding * 4, availUpgradesRect.y);
     RefreshUpgradesLists();
-    isGameGuiInit = true;
 }
 
 void DrawGame() {
     static char some_text[100] = "Some text";
     static bool isPressed = false;
-
-//    if (!isGameGuiInit) {
-//        InitGameUI(posX, posY);
-//    }
 
     typesSelectedTab = GuiTabs(typesTabRect, typesTabsLabels, sizeof(typesTabsLabels) / sizeof(typesTabsLabels[0]), typesSelectedTab);
     switch (typesSelectedTab) {
