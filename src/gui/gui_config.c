@@ -316,9 +316,9 @@ void buildUI(int posX, int poxY) {
 }
 
 
-void InitConfigUI(int posX, int posY) {
-    InitCheatUI(posX + 40, posY + 80);
-    buildUI(posX, posY);
+void InitConfigUI(Point anchor) {
+    InitCheatUI(anchor.posX + 40, anchor.posY + 80);
+    buildUI(anchor.posX, anchor.posY);
 
     BuildSelectUpgradesList("structure");
     SelectCurrentUpgrade(&game_state.upgrades_list[0]);
@@ -329,7 +329,7 @@ void InitConfigUI(int posX, int posY) {
     initDone = true;
 }
 
-void DrawConfigPanel(int posX, int poxY) {
+void DrawConfigPanel() {
     configTabSelectedEntry = GuiTabs(configTabRect, configTabEntries,
                                      sizeof(configTabEntries) / sizeof(configTabEntries[0]), configTabSelectedEntry);
 

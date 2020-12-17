@@ -15,7 +15,7 @@
 #include "gui/gui.h"
 #include "gui/game/gui_game.h"
 
-UpgradesHandleList AvailableUpgrades = {};
+UpgradesHandleList available_upgrades = {};
 
 upgrade *GetUpgradeFromName(char *name)
 {
@@ -79,11 +79,11 @@ void UpdateAvailableUpgrades()
     // Return list of all upgrades with satisfied dependencies
     // NOTE(cyphics) : This method is ran after every purchase
 
-    AvailableUpgrades.size = 0;
+    available_upgrades.size = 0;
     for (int i = 0; i < MAX_UPGRADES_AMOUNT; i++) {
         upgrade *up = &game_state.upgrades_list[i];
         if (!IsEmpty(up->id) && IsBuyable(up) && AreDependenciesMet(up)){
-            AvailableUpgrades.list[AvailableUpgrades.size++] = up;
+            available_upgrades.list[available_upgrades.size++] = up;
         }
     }
 }

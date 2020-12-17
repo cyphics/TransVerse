@@ -13,6 +13,4 @@ void CreateDistanceUnitsList() {
         strcat(DistanceUnitsListString, distance_std.list[i].name);
         if (i < num_units - 1) strcat(DistanceUnitsListString, ";");
     }
-    printf(DistanceUnitsListString);
-
 }

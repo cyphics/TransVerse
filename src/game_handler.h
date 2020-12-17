@@ -32,7 +32,7 @@ typedef struct UpgradesHandleList
     int size;
 } UpgradesHandleList;
 
-extern UpgradesHandleList AvailableUpgrades;
+extern UpgradesHandleList available_upgrades;
 
 void UpdateAffordableUpgrades();
 void UpdateAvailableUpgrades();

@@ -2,7 +2,9 @@
 
 start_compile="$(date -u +%s.%N)"
 ctags -e -R .
-compiled=false
+compilation_successful=false
+test_suite=true
+run_program=true
 
 # -Wno-narrowing -Wno-enum-compare are fore  raygui.h
 
@@ -21,14 +23,21 @@ build()
 
 build_cmake()
 {
+
     if [ ! -d "build" ]; then
         mkdir build
     fi
-    cd build/
-    cmake -Wno-dev ../
-    if cmake --build .
+    if cmake --build cmake-build-debug --target transverse -- -j 6
+
+    # cd build/
+    # cmake -Wno-dev ../
+    # if cmake --build .
     then
-        compiled=true
+        compilation_successful=true
+        if [ "$test_suite" ]
+        then
+            cmake --build cmake-build-debug --target test_suite -- -j 6
+        fi
     fi
 }
 
@@ -40,10 +49,14 @@ elapsed_compile="$(bc <<<"$end_compile-$start_compile")"
 echo ""
 echo "Program compiled in $elapsed_compile"
 
-if [ "$compiled" = true ]; then
+if [ "$compilation_successful" = true ]; then
     echo
-    ../build/tests/test_suite
-    #./TransVerse
+    if [ "$test_suite" = true ]; then
+        ./cmake-build-debug/tests/test_suite
+    fi
+    if [ "$run_program" = true ]; then
+        ./cmake-build-debug/src/transverse
+    fi
 fi
 
 # ./tests

@@ -28,8 +28,18 @@ typedef struct Interact{
     float fontSize;
 } Interact;
 
+typedef struct Point{
+    int posX;
+    int posY;
+} Point;
 
-int GuiListViewExDrag(Rectangle bounds, const char **text, int count, int *focus, int *scrollIndex, int active, void (DragGallBack(int)));
+int GuiListViewExDrag(Rectangle bounds,
+                      const char **text,
+                      int count,
+                      int *focus,
+                      int *scrollIndex,
+                      int active,
+                      void (DragGallBack(int)));
 void StartGui();
 
 #endif

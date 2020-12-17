@@ -7,6 +7,7 @@
 
 
 #include <raylib.h>
+#include "../types.h"
 
 // PUBLIC METHODS
 // Label control
@@ -17,4 +18,5 @@ bool GuiTextEdit(Rectangle bounds, char *text, bool editMode);
 bool GuiButton(Rectangle bounds, const char *text);
 //void DrawInteract(Interact *tr);
 bool GuiDropdownBox(Rectangle bounds, const char *text, int *active, bool editMode);
+
 #endif //TRANSVERSE_GUI_TOOLS_H

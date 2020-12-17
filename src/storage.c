@@ -5,9 +5,11 @@
    $Creator: Thierry Raeber$
    ======================================================================== */
 
+#include <stdlib.h>
 #include "storage.h"
+#include "helper.h"
 
-char *CONFIG_FILE = "../../saves/config.xml";
+char *CONFIG_FILE = "./saves/config.xml";
 char *GetXmlSegment(char receiver[], char xml_code[], char *entry)
 {
     /*
