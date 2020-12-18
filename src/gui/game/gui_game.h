@@ -5,7 +5,7 @@
 #ifndef TRANSVERSE_GUI_GAME_H
 #define TRANSVERSE_GUI_GAME_H
 
-void InitGameUI(Point anchor);
+void InitGameUI(Vector2 anchor);
 void DrawGame();
 
 #endif //TRANSVERSE_GUI_GAME_H

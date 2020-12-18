@@ -28,10 +28,10 @@ typedef struct Interact{
     float fontSize;
 } Interact;
 
-typedef struct Point{
-    int posX;
-    int posY;
-} Point;
+/* typedef struct Point{ */
+/*     int posX; */
+/*     int posY; */
+/* } Point; */
 
 int GuiListViewExDrag(Rectangle bounds,
                       const char **text,

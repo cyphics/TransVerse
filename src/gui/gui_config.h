@@ -10,7 +10,7 @@
 #include "gui.h"
 #include "../game.h"
 
-void InitConfigUI(Point anchor);
+void InitConfigUI(Vector2 anchor);
 void DrawConfigPanel();
 //void DrawInteract(Interact tr);
 

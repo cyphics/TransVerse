@@ -21,11 +21,11 @@
 #include "gui_engine.h"
 #include "../gui_utils.h"
 
-const float tab_height = 30;
+static const float tab_height = 30;
 
-Rectangle types_tab_rect;
-char *types_tabs_labels[5] = {"Terminal", "Editor", "Ship", "Workshop", "Engine"};
-int types_currently_selected_tab = 4;
+static Rectangle types_tab_rect;
+static char *types_tabs_labels[5] = {"Terminal", "Editor", "Ship", "Workshop", "Engine"};
+static int types_currently_selected_tab = 0;
 
 static Rectangle dashboard_border_rect;
 static struct DataLine dashboard_speed_line;
@@ -34,33 +34,32 @@ static struct DataLine dashboard_distance_line;
 static Rectangle remaining_time_label_rect;
 static Rectangle remaining_time_value_rect;
 
-const float availBoxWidth = 150;
-const float availBoxHeight = 150;
+static const float availBoxWidth = 150;
+static const float availBoxHeight = 150;
 
-Rectangle availUpgradesRect;
-Rectangle availStruct;
-Rectangle availScience;
-Rectangle availSoft;
-Rectangle availIncrement;
+#define MAX_UPGRADE_PER_TYPE 5
 
-#define max_available_ugprade_per_type 5
+static UpgradeInfo available_structure_upgrades[MAX_UPGRADE_PER_TYPE];
+static UpgradeInfo available_science_upgrades[MAX_UPGRADE_PER_TYPE];
+static UpgradeInfo available_software_upgrades[MAX_UPGRADE_PER_TYPE];
+static UpgradeInfo available_incremental_upgrades[MAX_UPGRADE_PER_TYPE];
 
-UpgradeInfo availStructUpgrades[max_available_ugprade_per_type];
-int structCount = 0;
-UpgradeInfo availScienceUpgrades[max_available_ugprade_per_type];
-int scienceCount = 0;
-UpgradeInfo availSoftUpgrades[max_available_ugprade_per_type];
-int softCount = 0;
-UpgradeInfo availIncrementUpgrades[max_available_ugprade_per_type];
-int incrementCount = 0;
-Interact availStructInter[max_available_ugprade_per_type] = {};
-Interact availScienceInter[max_available_ugprade_per_type] = {};
-Interact availSoftInter[max_available_ugprade_per_type] = {};
-Interact availIncrementInter[max_available_ugprade_per_type] = {};
-Rectangle main_panel_rect;
-Rectangle game_sub_border;
+static int number_structure_upgrades = 0;
+static int number_science_upgrades = 0;
+static int number_soft_upgrades = 0;
+static int number_incremental_upgrades = 0;
 
-struct DataLine {
+static Interact availStructInter[MAX_UPGRADE_PER_TYPE] = {};
+static Interact availScienceInter[MAX_UPGRADE_PER_TYPE] = {};
+static Interact availSoftInter[MAX_UPGRADE_PER_TYPE] = {};
+static Interact availIncrementInter[MAX_UPGRADE_PER_TYPE] = {};
+static Rectangle main_panel_rect;
+static Rectangle game_sub_border;
+
+static bool is_ugprade_clicked;
+static Vector2 upgrade_list_anchor;
+
+static struct DataLine {
     char label[30];
     struct Rectangle bounds;
     int dropDownActive;
@@ -71,108 +70,65 @@ static struct DataLine milestoneLine;
 static Rectangle milestonesRect;
 
 void RefreshUpgradesLists() {
-    structCount = 0;
-    scienceCount = 0;
-    softCount = 0;
-    incrementCount = 0;
+    number_structure_upgrades = 0;
+    number_science_upgrades = 0;
+    number_soft_upgrades = 0;
+    number_incremental_upgrades = 0;
 
     UpdateAvailableUpgrades();
-    memset(availStructUpgrades, 0, sizeof(availStructUpgrades));
-    memset(availScienceUpgrades, 0, sizeof(availScienceUpgrades));
-    memset(availSoftUpgrades, 0, sizeof(availSoftUpgrades));
-    memset(availIncrementUpgrades, 0, sizeof(availIncrementUpgrades));
-    Interact inter;
-    Rectangle r;
+
+    memset(available_structure_upgrades, 0, sizeof(available_structure_upgrades));
+    memset(available_science_upgrades, 0, sizeof(available_science_upgrades));
+    memset(available_software_upgrades, 0, sizeof(available_software_upgrades));
+    memset(available_incremental_upgrades, 0, sizeof(available_incremental_upgrades));
+
     for (int i = 0; i < available_upgrades.size; ++i) {
         UPGRADE handle = available_upgrades.list[i];
         UpgradeInfo info = {0};
         GetInfo(handle, &info);
         if (AreStrEquals(info.type, "structure")) {
-            availStructUpgrades[structCount] = info;
-            r = (Rectangle) {availUpgradesRect.x + PADDING,
-                             availUpgradesRect.y + PADDING + (TEXT_RECT_HEIGHT / 2 + PADDING) * structCount,
-                             availUpgradesRect.width - 2 * PADDING,
-                             TEXT_RECT_HEIGHT / 2};
-            inter = (Interact) {};
-            inter.rect = r;
-            inter.text = availStructUpgrades[structCount].name;
-            inter.isHoverable = true;
-            inter.isEditable = false;
-            inter.fontSize = FONT_SIZE / 2;
-            availStructInter[structCount] = inter;
-            structCount++;
+            available_structure_upgrades[number_structure_upgrades] = info;
+            number_structure_upgrades++;
         }
         if (AreStrEquals(info.type, "science")) {
-            availScienceUpgrades[scienceCount] = info;
-            r = (Rectangle) {availScience.x + PADDING,
-                             availScience.y + PADDING + (TEXT_RECT_HEIGHT / 2 + PADDING) * scienceCount,
-                             availScience.width - 2 * PADDING,
-                             TEXT_RECT_HEIGHT / 2};
-            inter = (Interact) {};
-            inter.rect = r;
-            inter.text = availScienceUpgrades[scienceCount].name;
-            inter.isHoverable = true;
-            inter.isEditable = false;
-            inter.fontSize = FONT_SIZE / 2;
-            availScienceInter[scienceCount] = inter;
-            scienceCount++;
+            available_science_upgrades[number_science_upgrades] = info;
+            number_science_upgrades++;
         }
         if (AreStrEquals(info.type, "software")) {
-            availSoftUpgrades[softCount] = info;
-            Rectangle r = (Rectangle) {availSoft.x + PADDING,
-                                       availSoft.y + PADDING + (TEXT_RECT_HEIGHT / 2 + PADDING) * softCount,
-                                       availSoft.width - 2 * PADDING, TEXT_RECT_HEIGHT / 2};
-            inter = (Interact) {};
-            inter.rect = r;
-            inter.text = availSoftUpgrades[softCount].name;
-            inter.isHoverable = true;
-            inter.isEditable = false;
-            inter.fontSize = FONT_SIZE / 2;
-            availSoftInter[softCount] = inter;
-            softCount++;
+            available_software_upgrades[number_soft_upgrades] = info;
+            number_soft_upgrades++;
         }
         if (AreStrEquals(info.type, "incremental")) {
-            availIncrementUpgrades[incrementCount] = info;
-            Rectangle r = (Rectangle) {availIncrement.x + PADDING,
-                                       availIncrement.y + PADDING + (TEXT_RECT_HEIGHT / 2 + PADDING) * incrementCount,
-                                       availIncrement.width - 2 * PADDING, TEXT_RECT_HEIGHT / 2};
-            inter = (Interact) {};
-            inter.text = availIncrementUpgrades[incrementCount].name;
-            inter.isHoverable = true;
-            inter.isEditable = false;
-            inter.fontSize = FONT_SIZE / 2;
-            availIncrementInter[incrementCount] = inter;
-            incrementCount++;
+            available_incremental_upgrades[number_incremental_upgrades] = info;
+            number_incremental_upgrades++;
         }
     }
-
-
 }
 
 
 
 
 
-void InitGameUI(Point anchor) {
+void InitGameUI(Vector2 anchor) {
 
-    game_sub_border.x = anchor.posX;
-    game_sub_border.y = anchor.posY;
+    game_sub_border.x = anchor.x;
+    game_sub_border.y = anchor.y;
 
-    Point dashboard_anchor = {game_sub_border.x + PADDING, game_sub_border.y + PADDING};
+    Vector2 dashboard_anchor = {game_sub_border.x + PADDING, game_sub_border.y + PADDING};
 
-    main_panel_rect = (Rectangle) {anchor.posX + PADDING, anchor.posY + PADDING,
+    main_panel_rect = (Rectangle) {anchor.x + PADDING, anchor.y + PADDING,
                                    800 - PADDING * 2, 400 - PADDING * 2};
 
     // DASHBOARD
     float line_height = 30;
-    dashboard_speed_line.bounds = (Rectangle) {dashboard_anchor.posX + PADDING, dashboard_anchor.posY + PADDING,
+    dashboard_speed_line.bounds = (Rectangle) {dashboard_anchor.x + PADDING, dashboard_anchor.y + PADDING,
                                                400, line_height};
     dashboard_acceleration_line.bounds = dashboard_speed_line.bounds;
     dashboard_acceleration_line.bounds.y += 40;
     dashboard_distance_line.bounds = dashboard_speed_line.bounds;
     dashboard_distance_line.bounds.x += dashboard_speed_line.bounds.width + 40;
-    dashboard_border_rect.x = dashboard_anchor.posX;
-    dashboard_border_rect.y = dashboard_anchor.posY;
+    dashboard_border_rect.x = dashboard_anchor.x;
+    dashboard_border_rect.y = dashboard_anchor.y;
     dashboard_border_rect.width = dashboard_speed_line.bounds.width + dashboard_distance_line.bounds.width + 3 * PADDING;
     dashboard_border_rect.height = 2 * line_height + 4 * PADDING;
 
@@ -192,21 +148,14 @@ void InitGameUI(Point anchor) {
     types_tab_rect.width = 600;
     types_tab_rect.height = tab_height;
 
-
-    availUpgradesRect = (Rectangle) {game_sub_border.x + PADDING, game_sub_border.y + 30,
-                                     availBoxWidth, availBoxHeight};
-    availStruct = (Rectangle) {availUpgradesRect.x, availUpgradesRect.y,
-                               availBoxWidth, availBoxHeight};
-    availScience = (Rectangle) {availUpgradesRect.x, availUpgradesRect.y,
-                                availBoxWidth, availBoxHeight};
-    availSoft = (Rectangle) {availUpgradesRect.x, availUpgradesRect.y,
-                             availBoxWidth, availBoxHeight};
-    availIncrement = (Rectangle) {availUpgradesRect.x, availUpgradesRect.y,
-                                  availBoxWidth, availBoxHeight};
-
     InitEngineScreen(types_tab_rect.x, types_tab_rect.y + types_tab_rect.height);
 
-//    ResizeEditor(availUpgradesRect.x + availUpgradesRect.width + padding * 4, availUpgradesRect.y);
+    upgrade_list_anchor.x = types_tab_rect.x;
+    upgrade_list_anchor.y = types_tab_rect.y + types_tab_rect.height + PADDING;
+
+
+
+//    ResizeEditor(available_upgrade_rect.x + available_upgrade_rect.width + padding * 4, available_upgrade_rect.y);
     RefreshUpgradesLists();
 }
 
@@ -220,6 +169,27 @@ void InitEngineScreen(int anchorX, int anchorY) {
     milestoneLine.bounds.width = dashboard_distance_line.bounds.width;
     milestoneLine.bounds.height = dashboard_distance_line.bounds.height;
 
+}
+
+void DrawUpgrade(UpgradeInfo info, Vector2 anchor, bool *isClicked) {
+    DrawText(info.name, anchor.x, anchor.y, FONT_SIZE, BLACK);
+    *isClicked = false;
+}
+
+void DrawUpgradesList(UpgradeInfo *upgrades_list, int list_length, Vector2 anchor){
+    int upgrade_height = 30;
+    bool isClicked;
+
+    for (int i = 0; i < list_length; ++i) {
+        Vector2 p = {anchor.x,   anchor.y + upgrade_height * i};
+        UpgradeInfo info = upgrades_list[i];
+        DrawUpgrade(info, p, &isClicked);
+
+        if(isClicked){
+            printf("Upgrade %s purchased", info.name);
+            /* PurchaseUpgrade(info.handle) */
+        }
+    }
 }
 
 void DrawValueWithSelectableUnit(struct DataLine *line, u_phys value) {
@@ -247,6 +217,44 @@ void DrawValueWithSelectableUnit(struct DataLine *line, u_phys value) {
         line->dropDownEdit = !line->dropDownEdit;
 }
 
+void DrawTerminalTab() {
+    DrawText("Science",
+             upgrade_list_anchor.x + PADDING,
+             upgrade_list_anchor.y - 10,
+             FONT_SIZE / 2,
+             DARKGRAY);
+    /* DrawRectangleLinesEx((Recta), 1, BLACK); */
+    DrawUpgradesList(available_science_upgrades, number_science_upgrades, upgrade_list_anchor);
+}
+
+void DrawEditorTab() {
+    DrawText("Available softwares",
+             upgrade_list_anchor.x + PADDING,
+             upgrade_list_anchor.y - 10,
+             FONT_SIZE / 2, DARKGRAY);
+    /* DrawRectangleLinesEx(available_software_rect, 1, BLACK); */
+    DrawUpgradesList(available_software_upgrades, number_soft_upgrades, upgrade_list_anchor);
+}
+
+void DrawShipTab() {
+    DrawText("Incremental",
+             upgrade_list_anchor.x + PADDING,
+             upgrade_list_anchor.y - 10,
+             FONT_SIZE / 2, DARKGRAY);
+    /* DrawRectangleLinesEx(available_incremental_rect, 1, BLACK); */
+    DrawUpgradesList(available_incremental_upgrades, number_incremental_upgrades, upgrade_list_anchor);
+}
+
+void DrawWorkshopTab() {
+    DrawText("Structure",
+             upgrade_list_anchor.x + PADDING,
+             upgrade_list_anchor.y - 10,
+             FONT_SIZE / 2, DARKGRAY);
+    /* DrawRectangleLinesEx(available_structure_rect, 1, BLACK); */
+    DrawUpgradesList(available_structure_upgrades, number_structure_upgrades, upgrade_list_anchor);
+}
+
+
 void DrawEngineTab() {
     DrawRectangleLinesEx(milestonesRect, 1, BLACK);
     int num_milestones = sizeof(dist_mstone.list) / sizeof(dist_mstone.list[0]);
@@ -258,41 +266,6 @@ void DrawEngineTab() {
     }
 }
 
-
-
-
-void DrawEditorTab() {
-    DrawText("Available softwares", availSoft.x + PADDING, availStruct.y - 10, FONT_SIZE / 2, DARKGRAY);
-    DrawRectangleLinesEx(availSoft, 1, BLACK);
-//    for (int i = 0; i < softCount; ++i) {
-//        DrawInteract(&availSoftInter[i]);
-//    }
-//    TypeCode();
-}
-
-void DrawShipTab() {
-    DrawText("Incremental", availIncrement.x + PADDING, availStruct.y - 10, FONT_SIZE / 2, DARKGRAY);
-    DrawRectangleLinesEx(availIncrement, 1, BLACK);
-//    for (int i = 0; i < incrementCount; ++i) {
-//        DrawInteract(&availIncrementInter[i]);
-//    }
-}
-
-void DrawWorkshopTab() {
-    DrawText("Structure", availStruct.x + PADDING, availStruct.y - 10, FONT_SIZE / 2, DARKGRAY);
-    DrawRectangleLinesEx(availStruct, 1, BLACK);
-//    for (int i = 0; i < structCount; ++i) {
-//        DrawInteract(&availStructInter[i]);
-//    }
-}
-
-void DrawTerminalTab() {
-    DrawText("Science", availScience.x + PADDING, availStruct.y - 10, FONT_SIZE / 2, DARKGRAY);
-    DrawRectangleLinesEx(availScience, 1, BLACK);
-//    for (int i = 0; i < scienceCount; ++i) {
-//        DrawInteract(&availScienceInter[i]);
-//    }
-}
 
 void DrawDashboard(){
     DrawRectangleLinesEx(dashboard_border_rect, 1, BLACK);
@@ -313,11 +286,10 @@ void DrawGame() {
     // Static content
     DrawDashboard();
     DrawRectangleLinesEx(game_sub_border, 2, BLACK);
-    types_currently_selected_tab = GuiTabs(types_tab_rect,
-                                           types_tabs_labels,
-                                           sizeof(types_tabs_labels) / sizeof(types_tabs_labels[0]),
-                                           types_currently_selected_tab);
-
+    GuiTabs(types_tab_rect,
+            types_tabs_labels,
+            sizeof(types_tabs_labels) / sizeof(types_tabs_labels[0]),
+            &types_currently_selected_tab);
 
     // Dynamic content
     switch (types_currently_selected_tab) {
@@ -343,9 +315,5 @@ void DrawGame() {
         default:
             break;
     }
-
-}
-
-void Foo(char i){
 
 }

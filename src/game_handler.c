@@ -76,7 +76,7 @@ void UpdateAffordableUpgrades()
 
 void UpdateAvailableUpgrades()
 {
-    // Return list of all upgrades with satisfied dependencies
+    // Stores list of all upgrades with satisfied dependencies
     // NOTE(cyphics) : This method is ran after every purchase
 
     available_upgrades.size = 0;

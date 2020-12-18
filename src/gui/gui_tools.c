@@ -15,6 +15,7 @@ typedef enum {
     GUI_STATE_FOCUSED,
     GUI_STATE_PRESSED,
     GUI_STATE_DISABLED,
+    GUI_STATE_SELECTED
 } GuiControlState;
 
 const float gradWidth = 30.0f;
@@ -48,6 +49,7 @@ typedef enum {
     TEXT_SPACING,
     LINE_COLOR,
     BACKGROUND_COLOR,
+    SECONDARY_BACKGROUND_COLOR,
 } GuiDefaultProperty;
 
 // Gui controls
@@ -61,6 +63,12 @@ typedef enum {
     SPINNER,
     LISTVIEW
 } GuiControl;
+
+// Button types
+typedef enum {
+    BUTTON_DEFAULT = 0,
+    BUTTON_TAB
+} GuiButtonType;
 
 // Gui base properties for every control
 typedef enum {
@@ -76,6 +84,9 @@ typedef enum {
     BORDER_COLOR_DISABLED,
     BASE_COLOR_DISABLED,
     TEXT_COLOR_DISABLED,
+    BORDER_COLOR_SELECTED,
+    BASE_COLOR_SELECTED,
+    TEXT_COLOR_SELECTED,
     BORDER_WIDTH,
     TEXT_PADDING,
     TEXT_ALIGNMENT,
@@ -93,8 +104,12 @@ typedef enum {
     DROPDOWN_ITEMS_PADDING
 } GuiDropdownBoxProperty;
 
-// Gui control property style color element
-typedef enum { BORDER = 0, BASE, TEXT, OTHER } GuiPropertyElement;
+// Gui control property style background_color element
+typedef enum {
+    BORDER = 0,
+    BASE,
+    TEXT,
+    NUMBER_PROPERTIES } GuiPropertyElement;
 
 static Font guiFont = { 0 };            // Gui current font (WARNING: highly coupled to raylib)
 static float guiAlpha = 1.0f;           // Gui element transpacency on drawing
@@ -136,6 +151,9 @@ static void GuiLoadStyleDefault(void) {
     GuiSetStyle(DEFAULT, BORDER_COLOR_DISABLED, 0xb5c1c2ff);
     GuiSetStyle(DEFAULT, BASE_COLOR_DISABLED, 0xe6e9e9ff);
     GuiSetStyle(DEFAULT, TEXT_COLOR_DISABLED, 0xaeb7b8ff);
+    GuiSetStyle(DEFAULT, BORDER_COLOR_SELECTED, 0x838383ff);
+    GuiSetStyle(DEFAULT, BASE_COLOR_SELECTED, 0x838383ff);
+    GuiSetStyle(DEFAULT, TEXT_COLOR_SELECTED, 0xc9c9c9ff);
     GuiSetStyle(DEFAULT, LINE_COLOR, 0x90abb5ff);       // DEFAULT specific property
     GuiSetStyle(DEFAULT, BACKGROUND_COLOR, 0xf5f5f5ff);       // DEFAULT specific property
     GuiSetStyle(DEFAULT, BORDER_WIDTH, 1);                       // WARNING: Some controls use other values
@@ -258,30 +276,26 @@ void GuiDrawText(const char *text, Rectangle bounds, int alignment, Color tint) 
 }
 
 // Gui draw rectangle using default raygui plain style with borders
-static void GuiDrawRectangle(Rectangle bounds, int borderWidth, Color borderColor, Color color) {
-    if (color.a > 0) {
-        // Draw rectangle filled with color
-//        DrawRectangle(bounds.x, bounds.y, bounds.width, bounds.height, color);
-        DrawRectangleRec(bounds, color);
+static void GuiDrawRectangle(Rectangle bounds, int border_width, Color border_color, Color background_color) {
+    if (background_color.a > 0) {
+        DrawRectangleRec(bounds, background_color);
     }
 
-    if (borderWidth > 0) {
-        // Draw rectangle border lines with color
-        DrawRectangle(bounds.x, bounds.y, bounds.width, borderWidth, borderColor);
-        DrawRectangle(bounds.x, bounds.y + borderWidth, borderWidth, bounds.height - 2 * borderWidth, borderColor);
-        DrawRectangle(bounds.x + bounds.width - borderWidth, bounds.y + borderWidth, borderWidth, bounds.height - 2 * borderWidth,
-                      borderColor);
-        DrawRectangle(bounds.x, bounds.y + bounds.height - borderWidth, bounds.width, borderWidth, borderColor);
+    if (border_width > 0) {
+        DrawRectangle(bounds.x, bounds.y, bounds.width, border_width, border_color);
+        DrawRectangle(bounds.x, bounds.y + border_width, border_width, bounds.height - 2 * border_width, border_color);
+        DrawRectangle(bounds.x + bounds.width - border_width,
+                      bounds.y + border_width, border_width,
+                      bounds.height - 2 * border_width, border_color);
+        DrawRectangle(bounds.x, bounds.y + bounds.height - border_width, bounds.width, border_width, border_color);
     }
 
-    // TODO: For n-patch-based style we would need: [state] and maybe [control]
-    // In this case all controls drawing logic should be moved to this function... I don't like it...
 }
 
 bool GuiTextEdit(Rectangle bounds, char *text, bool editMode) {
     static int framesCounter = 0;
 
-    bool pressed = false;
+    bool is_clicked = false;
 
     Rectangle cursor = {
             bounds.x + GuiGetStyle(TEXTBOX, TEXT_PADDING) + GetTextWidth(text) + 2,
@@ -290,7 +304,7 @@ bool GuiTextEdit(Rectangle bounds, char *text, bool editMode) {
             GuiGetStyle(DEFAULT, TEXT_SIZE) * 2
     };
 
-    Vector2 mousePoint = GetMousePosition();
+    Vector2 mouse_point = GetMousePosition();
     GuiControlState state = GUI_STATE_NORMAL;
 
     if (editMode) {
@@ -331,8 +345,8 @@ bool GuiTextEdit(Rectangle bounds, char *text, bool editMode) {
         }
 
         if (IsKeyPressed(KEY_ENTER) ||
-            (!CheckCollisionPointRec(mousePoint, bounds) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)))
-            pressed = true;
+            (!CheckCollisionPointRec(mouse_point, bounds) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)))
+            is_clicked = true;
 
         // Check text alignment to position cursor properly
         int textAlignment = GuiGetStyle(TEXTBOX, TEXT_ALIGNMENT);
@@ -341,13 +355,13 @@ bool GuiTextEdit(Rectangle bounds, char *text, bool editMode) {
             cursor.x = bounds.x + bounds.width - GuiGetStyle(TEXTBOX, TEXT_INNER_PADDING);
     } // if (editMode)
     else {
-        if (CheckCollisionPointRec(mousePoint, bounds)) {
+        if (CheckCollisionPointRec(mouse_point, bounds)) {
             state = GUI_STATE_FOCUSED;
-            if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) pressed = true;
+            if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) is_clicked = true;
         }
     }
 
-    if (pressed) framesCounter = 0;
+    if (is_clicked) framesCounter = 0;
 
     //--------------------------------------------------------------------
 
@@ -355,7 +369,7 @@ bool GuiTextEdit(Rectangle bounds, char *text, bool editMode) {
     //--------------------------------------------------------------------
     if (state == GUI_STATE_PRESSED) {
         GuiDrawRectangle(bounds, GuiGetStyle(TEXTBOX, BORDER_WIDTH),
-                         Fade(GetColor(GuiGetStyle(TEXTBOX, BORDER + (state * 3))), guiAlpha),
+                         Fade(GetColor(GuiGetStyle(TEXTBOX, BORDER + (state * NUMBER_PROPERTIES))), guiAlpha),
                          Fade(GetColor(GuiGetStyle(TEXTBOX, BASE_COLOR_PRESSED)), guiAlpha));
 
         // Draw blinking cursor
@@ -363,33 +377,35 @@ bool GuiTextEdit(Rectangle bounds, char *text, bool editMode) {
             GuiDrawRectangle(cursor, 0, BLANK, Fade(GetColor(GuiGetStyle(TEXTBOX, BORDER_COLOR_PRESSED)), guiAlpha));
     } else if (state == GUI_STATE_DISABLED) {
         GuiDrawRectangle(bounds, GuiGetStyle(TEXTBOX, BORDER_WIDTH),
-                         Fade(GetColor(GuiGetStyle(TEXTBOX, BORDER + (state * 3))), guiAlpha),
+                         Fade(GetColor(GuiGetStyle(TEXTBOX, BORDER + (state * NUMBER_PROPERTIES))), guiAlpha),
                          Fade(GetColor(GuiGetStyle(TEXTBOX, BASE_COLOR_DISABLED)), guiAlpha));
     } else
-        GuiDrawRectangle(bounds, 1, Fade(GetColor(GuiGetStyle(TEXTBOX, BORDER + (state * 3))), guiAlpha),
+        GuiDrawRectangle(bounds, 1, Fade(GetColor(GuiGetStyle(TEXTBOX, BORDER + (state * NUMBER_PROPERTIES))), guiAlpha),
                          BLANK); // TODO understand
 
     GuiDrawText(text, GetTextBounds(TEXTBOX, bounds), GuiGetStyle(TEXTBOX, TEXT_ALIGNMENT),
-                Fade(GetColor(GuiGetStyle(TEXTBOX, TEXT + (state * 3))), guiAlpha));
+                Fade(GetColor(GuiGetStyle(TEXTBOX, TEXT + (state * NUMBER_PROPERTIES))), guiAlpha));
     //--------------------------------------------------------------------
 
-    return pressed;
+    return is_clicked;
 }
 
-bool GuiButton(Rectangle bounds, const char *text) {
+bool GuiButtonAbstract(Rectangle bounds, const char *text, int button_type, bool is_selected) {
     GuiControlState state = GUI_STATE_NORMAL;
-    bool pressed = false;
+    if(is_selected)
+        state = GUI_STATE_SELECTED;
+    bool is_clicked = false;
 
     // Update control
     //--------------------------------------------------------------------
-    Vector2 mousePoint = GetMousePosition();
+    Vector2 mouse_point = GetMousePosition();
 
     // Check button state
-    if (CheckCollisionPointRec(mousePoint, bounds)) {
+    if (CheckCollisionPointRec(mouse_point, bounds)) {
         if (IsMouseButtonDown(MOUSE_LEFT_BUTTON)) state = GUI_STATE_PRESSED;
         else state = GUI_STATE_FOCUSED;
 
-        if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) pressed = true;
+        if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) is_clicked = true;
     }
 
     //--------------------------------------------------------------------
@@ -397,39 +413,41 @@ bool GuiButton(Rectangle bounds, const char *text) {
     // Draw control
     //--------------------------------------------------------------------
     GuiDrawRectangle(bounds, GuiGetStyle(BUTTON, BORDER_WIDTH),
-                     Fade(GetColor(GuiGetStyle(BUTTON, BORDER + (state * 3))), guiAlpha),
-                     Fade(GetColor(GuiGetStyle(BUTTON, BASE + (state * 3))), guiAlpha));
+                     Fade(GetColor(GuiGetStyle(BUTTON, BORDER + (state * NUMBER_PROPERTIES))), guiAlpha),
+                     Fade(GetColor(GuiGetStyle(BUTTON, BASE + (state * NUMBER_PROPERTIES))), guiAlpha));
     GuiDrawText(text, GetTextBounds(BUTTON, bounds), GuiGetStyle(BUTTON, TEXT_ALIGNMENT),
-                Fade(GetColor(GuiGetStyle(BUTTON, TEXT + (state * 3))), guiAlpha));
+                Fade(GetColor(GuiGetStyle(BUTTON, TEXT + (state * 4))), guiAlpha));
     //------------------------------------------------------------------
 
-    return pressed;
+    return is_clicked;
 }
 
-int GuiTabs(Rectangle bounds, char **entries, int num_entries, int current_entry) {
+bool GuiButton(Rectangle bounds, const char *text) {
+    return GuiButtonAbstract(bounds, text, BUTTON_DEFAULT, false);
+}
+
+bool GuiButtonTab(Rectangle bounds, const char *text, bool is_selected) {
+    return GuiButtonAbstract(bounds, text, BUTTON_TAB, is_selected);
+}
+
+void GuiTabs(Rectangle bounds, char **entries, int num_entries, int *current_entry) {
     float padding = 4.0f;
     float tab_width = (bounds.width - (padding * (num_entries + 1))) / num_entries;
     float tab_height = bounds.height - padding * 2;
     float tab_y_anchor = bounds.y + padding;
-    Vector2 mousePos = GetMousePosition();
+    Vector2 mouse_pos = GetMousePosition();
+    bool is_selected;
 
     DrawRectangleLinesEx(bounds, 2, BLACK);
     for (int i = 0; i < num_entries; ++i) {
-
+        is_selected = false;
         float x_anchor = bounds.x + padding + (tab_width + padding) * i;
-        Rectangle tabRect = {x_anchor, tab_y_anchor, tab_width, tab_height};
-        if (i == current_entry)
-            DrawRectangleRec(tabRect, LIGHTGRAY);
-        if (CheckCollisionPointRec(mousePos, tabRect)) {
-            DrawRectangleRec(tabRect, Fade(BLUE, 0.5f));
-            if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
-                current_entry = i;
-            }
-        }
-        DrawRectangleLinesEx(tabRect, 1, BLACK);
-        DrawText(entries[i], x_anchor + padding, tab_y_anchor, FONT_SIZE, GRAY);
+        Rectangle tab_rect = {x_anchor, tab_y_anchor, tab_width, tab_height};
+        if(*current_entry == i)
+            is_selected = true;
+        if(GuiButtonTab(tab_rect, entries[i], is_selected))
+            *current_entry = i;
     }
-    return current_entry;
 }
 
 // Split controls text into multiple strings
@@ -513,34 +531,34 @@ bool GuiDropdownBox(Rectangle bounds, const char *text, int *active, bool editMo
 
     Rectangle itemBounds = bounds;
 
-    bool pressed = false;       // Check mouse button pressed
+    bool is_clicked = false;       // Check mouse button is_clicked
 
     // Update control
     //--------------------------------------------------------------------
 
-    Vector2 mousePoint = GetMousePosition();
+    Vector2 mouse_point = GetMousePosition();
 
     if (editMode) {
         state = GUI_STATE_PRESSED;
 
-        // Check if mouse has been pressed or released outside limits
-        if (!CheckCollisionPointRec(mousePoint, boundsOpen)) {
-            if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) || IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) pressed = true;
+        // Check if mouse has been is_clicked or released outside limits
+        if (!CheckCollisionPointRec(mouse_point, boundsOpen)) {
+            if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) || IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) is_clicked = true;
         }
 
-        // Check if already selected item has been pressed again
-        if (CheckCollisionPointRec(mousePoint, bounds) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) pressed = true;
+        // Check if already selected item has been is_clicked again
+        if (CheckCollisionPointRec(mouse_point, bounds) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) is_clicked = true;
 
         // Check focused and selected item
         for (int i = 0; i < itemsCount; i++) {
             // Update item rectangle y position for next item
             itemBounds.y += (bounds.height + GuiGetStyle(DROPDOWNBOX, DROPDOWN_ITEMS_PADDING));
 
-            if (CheckCollisionPointRec(mousePoint, itemBounds)) {
+            if (CheckCollisionPointRec(mouse_point, itemBounds)) {
                 itemFocused = i;
                 if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
                     itemSelected = i;
-                    pressed = true;     // Item selected, change to editMode = false
+                    is_clicked = true;     // Item selected, change to editMode = false
                 }
                 break;
             }
@@ -548,9 +566,9 @@ bool GuiDropdownBox(Rectangle bounds, const char *text, int *active, bool editMo
 
         itemBounds = bounds;
     } else {
-        if (CheckCollisionPointRec(mousePoint, bounds)) {
+        if (CheckCollisionPointRec(mouse_point, bounds)) {
             if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-                pressed = true;
+                is_clicked = true;
                 state = GUI_STATE_PRESSED;
             } else state = GUI_STATE_FOCUSED;
         }
@@ -562,10 +580,10 @@ bool GuiDropdownBox(Rectangle bounds, const char *text, int *active, bool editMo
     if (editMode) GuiPanel(boundsOpen);
 
     GuiDrawRectangle(bounds, GuiGetStyle(DROPDOWNBOX, BORDER_WIDTH),
-                     Fade(GetColor(GuiGetStyle(DROPDOWNBOX, BORDER + state * 3)), guiAlpha),
-                     Fade(GetColor(GuiGetStyle(DROPDOWNBOX, BASE + state * 3)), guiAlpha));
+                     Fade(GetColor(GuiGetStyle(DROPDOWNBOX, BORDER + state * NUMBER_PROPERTIES)), guiAlpha),
+                     Fade(GetColor(GuiGetStyle(DROPDOWNBOX, BASE + state * NUMBER_PROPERTIES)), guiAlpha));
     GuiDrawText(items[itemSelected], GetTextBounds(DEFAULT, bounds), GuiGetStyle(DROPDOWNBOX, TEXT_ALIGNMENT),
-                Fade(GetColor(GuiGetStyle(DROPDOWNBOX, TEXT + state * 3)), guiAlpha));
+                Fade(GetColor(GuiGetStyle(DROPDOWNBOX, TEXT + state * NUMBER_PROPERTIES)), guiAlpha));
 
     if (editMode) {
         // Draw visible items
@@ -598,14 +616,14 @@ bool GuiDropdownBox(Rectangle bounds, const char *text, int *active, bool editMo
                             bounds.y + bounds.height / 2 - 2 + 5},
                  (Vector2) {bounds.x + bounds.width - GuiGetStyle(DROPDOWNBOX, ARROW_PADDING) + 10,
                             bounds.y + bounds.height / 2 - 2},
-                 Fade(GetColor(GuiGetStyle(DROPDOWNBOX, TEXT + (state * 3))), guiAlpha));
+                 Fade(GetColor(GuiGetStyle(DROPDOWNBOX, TEXT + (state * NUMBER_PROPERTIES))), guiAlpha));
 
     //GuiDrawText("v", RAYGUI_CLITERAL(Rectangle){ bounds.x + bounds.width - GuiGetStyle(DROPDOWNBOX, ARROW_PADDING), bounds.y + bounds.height/2 - 2, 10, 10 },
     //            GUI_TEXT_ALIGN_CENTER, Fade(GetColor(GuiGetStyle(DROPDOWNBOX, TEXT + (state*3))), guiAlpha));
     //--------------------------------------------------------------------
 
     *active = itemSelected;
-    return pressed;
+    return is_clicked;
 }
 
 // Label control

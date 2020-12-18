@@ -13,8 +13,8 @@
 #include "gui_utils.h"
 
 void InitGui(){
-    Point config_panel_anchor = {0, 0};
-    Point game_panel_anchor = {600, 0};
+    Vector2 config_panel_anchor = {0, 0};
+    Vector2 game_panel_anchor = {600, 0};
     CreateDistanceUnitsList();
     InitGameUI(game_panel_anchor);
     InitConfigUI(config_panel_anchor);
