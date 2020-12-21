@@ -7,6 +7,8 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <limits.h>
+#include "utils.h"
 #include "game_handler.h"
 #include "helper.h"
 #include "game_debug.h"
@@ -16,6 +18,19 @@
 #include "gui/game/gui_game.h"
 
 UpgradesHandleList available_upgrades = {};
+const char *project_root_dir;
+char config_file_path[PATH_MAX];
+
+void LoadConfigFile(){
+    project_root_dir = get_project_root_dir();
+    printf("Project dir: %s\n", project_root_dir);
+
+    /* char config_file[PATH_MAX] = project_root_dir; */
+    strcat(config_file_path, project_root_dir);
+    strcat(config_file_path, "/saves/config.xml");
+    printf("Config file: %s\n", config_file_path);
+
+}
 
 upgrade *GetUpgradeFromName(char *name)
 {
@@ -67,12 +82,18 @@ bool AreDependenciesMet(upgrade *up)
 }
 
 
-void UpdateAffordableUpgrades()
-{
-    // NOTE(cyphics) : This method is called every frame
-    // It must therefore be economic
-
-}
+/* void UpdateAffordableUpgrades() */
+/* { */
+/*     // NOTE(cyphics) : This method is called every frame */
+/*     // It must therefore be economic */
+/*     available_upgrades.size = 0; */
+/*     for (int i = 0; i < MAX_UPGRADES_AMOUNT; i++) { */
+/*         upgrade *up = &game_state.upgrades_list[i]; */
+/*         if (!IsEmpty(up->id) && IsBuyable(up) && AreDependenciesMet(up)){ */
+/*             available_upgrades.list[available_upgrades.size++] = up; */
+/*         } */
+/*     } */
+/* } */
 
 void UpdateAvailableUpgrades()
 {
@@ -86,6 +107,29 @@ void UpdateAvailableUpgrades()
             available_upgrades.list[available_upgrades.size++] = up;
         }
     }
+}
+
+static int GetAmountBought(UPGRADE handle){
+    return 1;
+}
+
+static price MultiplyPrice(price p, float increase_factor){
+    price new_price = p;
+    for(int i = 0; i < MAX_RESOURCES_PER_PRICE; i++){
+        new_price.resources[i].amount *= increase_factor;
+    }
+}
+
+price GetPriceUpgrade(UPGRADE handle, int amount){
+    upgrade *up = (upgrade *)handle;
+    price current_price = up->initial_price;
+
+    return current_price;
+}
+
+bool IsAffordable(UPGRADE handle){
+    bool is_affordable = true;
+
 }
 
 bool PurchaseUpgrade(UPGRADE handle, int amount)
@@ -114,19 +158,19 @@ void GetInfo(UPGRADE handle, UpgradeInfo *info)
 
 bool LoadGame()
 {
-    bool result = LoadGameFromFile(CONFIG_FILE, &game_state);
+    LoadConfigFile();
+
+    bool result = LoadGameFromFile(config_file_path, &game_state);
     if (result) {
         UpdateAvailableUpgrades();
-        UpdateAffordableUpgrades();
-        // PrintGameState(state);
     }
-
+    /* PrintGameState(state); */
     return result;
 }
 
 void SaveGame()
 {
-    SaveGameToDisk(CONFIG_FILE, &game_state);
+    SaveGameToDisk(config_file_path, &game_state);
     printf("Game saved!\n");
 }
 

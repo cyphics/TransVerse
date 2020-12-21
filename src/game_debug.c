@@ -7,6 +7,9 @@
 
 #include "game_debug.h"
 #include "storage.h"
+#include "game_handler.h"
+
+extern char *config_file_path;
 
 const static upgrade u1 = { "Terminal", "structure", "another desc", {{"energy", 10}}, 1.2, 0, {} };
 const static upgrade u2 = { "Quantum Generator", "science", "a desc", {}, 1.2, 0, {"Terminal"} };
@@ -35,7 +38,7 @@ void CreateFirstXmlFile()
                                        sizeof(init_upgrade_list) / sizeof(init_upgrade_list[0]),
                                        init_resources_list,
                                        sizeof(init_resources_list) / sizeof(init_resources_list[0]));
-    SaveGameToDisk(CONFIG_FILE, &config);
+    SaveGameToDisk(config_file_path, &config);
 }
 
 void ResourceToString(char* ptr, resource res)

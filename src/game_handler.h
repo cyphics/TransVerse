@@ -8,7 +8,6 @@
 #if !defined(GAME_HANDLER_H)
 #define GAME_HANDLER_H
 
-
 #include <stdbool.h>
 #include "game.h"
 

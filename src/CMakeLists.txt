@@ -12,6 +12,7 @@ set(LIB_SOURCES
         game_debug.c
         helper.c
         storage.c
+        utils.c
         gui/gui.c
         gui/game/gui_game.c
         gui/gui_config.c
@@ -23,6 +24,7 @@ set(HEADERS  ${CONFIG_HEADER}
         game_debug.h
         helper.h
         storage.h
+        utils.h
         gui/gui.h
         gui/game/gui_game.c
         gui/gui_config.c
