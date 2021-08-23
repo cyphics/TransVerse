@@ -292,7 +292,7 @@ static void GuiDrawRectangle(Rectangle bounds, int border_width, Color border_co
 
 }
 
-bool GuiTextEdit(Rectangle bounds, char *text, bool editMode) {
+bool GuiTextEdit(Rectangle bounds, char *text, bool edit_mode) {
     static int framesCounter = 0;
 
     bool is_clicked = false;
@@ -307,7 +307,7 @@ bool GuiTextEdit(Rectangle bounds, char *text, bool editMode) {
     Vector2 mouse_point = GetMousePosition();
     GuiControlState state = GUI_STATE_NORMAL;
 
-    if (editMode) {
+    if (edit_mode) {
         state = GUI_STATE_PRESSED;
         framesCounter++;
 
@@ -353,7 +353,7 @@ bool GuiTextEdit(Rectangle bounds, char *text, bool editMode) {
         if (textAlignment == GUI_TEXT_ALIGN_CENTER) cursor.x = bounds.x + GetTextWidth(text) / 2 + bounds.width / 2 + 1;
         else if (textAlignment == GUI_TEXT_ALIGN_RIGHT)
             cursor.x = bounds.x + bounds.width - GuiGetStyle(TEXTBOX, TEXT_INNER_PADDING);
-    } // if (editMode)
+    } // if (edit_mode)
     else {
         if (CheckCollisionPointRec(mouse_point, bounds)) {
             state = GUI_STATE_FOCUSED;
@@ -373,7 +373,7 @@ bool GuiTextEdit(Rectangle bounds, char *text, bool editMode) {
                          Fade(GetColor(GuiGetStyle(TEXTBOX, BASE_COLOR_PRESSED)), guiAlpha));
 
         // Draw blinking cursor
-        if (editMode && ((framesCounter / 20) % 2 == 0))
+        if (edit_mode && ((framesCounter / 20) % 2 == 0))
             GuiDrawRectangle(cursor, 0, BLANK, Fade(GetColor(GuiGetStyle(TEXTBOX, BORDER_COLOR_PRESSED)), guiAlpha));
     } else if (state == GUI_STATE_DISABLED) {
         GuiDrawRectangle(bounds, GuiGetStyle(TEXTBOX, BORDER_WIDTH),
@@ -390,10 +390,11 @@ bool GuiTextEdit(Rectangle bounds, char *text, bool editMode) {
     return is_clicked;
 }
 
-bool GuiButtonAbstract(Rectangle bounds, const char *text, int button_type, bool is_selected) {
+bool GuiButtonAbstract(Rectangle bounds, const char *text, int button_type,
+                       bool is_selected, bool is_enabled) {
     GuiControlState state = GUI_STATE_NORMAL;
-    if(is_selected)
-        state = GUI_STATE_SELECTED;
+    if(is_selected) state = GUI_STATE_SELECTED;
+    if(!is_enabled) state = GUI_STATE_DISABLED;
     bool is_clicked = false;
 
     // Update control
@@ -422,12 +423,12 @@ bool GuiButtonAbstract(Rectangle bounds, const char *text, int button_type, bool
     return is_clicked;
 }
 
-bool GuiButton(Rectangle bounds, const char *text) {
-    return GuiButtonAbstract(bounds, text, BUTTON_DEFAULT, false);
+bool GuiButton(Rectangle bounds, const char *text, bool is_enabled) {
+    return GuiButtonAbstract(bounds, text, BUTTON_DEFAULT, false, is_enabled);
 }
 
 bool GuiButtonTab(Rectangle bounds, const char *text, bool is_selected) {
-    return GuiButtonAbstract(bounds, text, BUTTON_TAB, is_selected);
+    return GuiButtonAbstract(bounds, text, BUTTON_TAB, is_selected, true);
 }
 
 void GuiTabs(Rectangle bounds, char **entries, int num_entries, int *current_entry) {
@@ -517,54 +518,55 @@ void GuiPanel(Rectangle bounds)
 
 // Dropdown Box control
 // NOTE: Returns mouse click
-bool GuiDropdownBox(Rectangle bounds, const char *text, int *active, bool editMode) {
+bool GuiDropdownBox(Rectangle bounds, const char *text, int *active, bool edit_mode) {
+
     GuiControlState state = GUI_STATE_NORMAL;
-    int itemSelected = *active;
-    int itemFocused = -1;
+    int selected_item = *active;
+    int focused_item = -1;
 
     // Get substrings items from text (items pointers, lengths and count)
-    int itemsCount = 0;
-    const char **items = GuiTextSplit(text, &itemsCount, NULL);
+    int item_counter = 0;
+    const char **items = GuiTextSplit(text, &item_counter, NULL);
 
-    Rectangle boundsOpen = bounds;
-    boundsOpen.height = (itemsCount + 1) * (bounds.height + GuiGetStyle(DROPDOWNBOX, DROPDOWN_ITEMS_PADDING));
+    Rectangle open_bounds = bounds;
+    open_bounds.height = (item_counter + 1) * (bounds.height + GuiGetStyle(DROPDOWNBOX, DROPDOWN_ITEMS_PADDING));
 
-    Rectangle itemBounds = bounds;
+    Rectangle item_bounds = bounds;
 
-    bool is_clicked = false;       // Check mouse button is_clicked
+    bool is_clicked = false;
 
     // Update control
     //--------------------------------------------------------------------
 
     Vector2 mouse_point = GetMousePosition();
 
-    if (editMode) {
+    if (edit_mode) {
         state = GUI_STATE_PRESSED;
 
-        // Check if mouse has been is_clicked or released outside limits
-        if (!CheckCollisionPointRec(mouse_point, boundsOpen)) {
+        // Check if mouse has been clicked or released outside limits
+        if (!CheckCollisionPointRec(mouse_point, open_bounds)) {
             if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) || IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) is_clicked = true;
         }
 
-        // Check if already selected item has been is_clicked again
+        // Check if already selected item has been clicked again
         if (CheckCollisionPointRec(mouse_point, bounds) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) is_clicked = true;
 
         // Check focused and selected item
-        for (int i = 0; i < itemsCount; i++) {
-            // Update item rectangle y position for next item
-            itemBounds.y += (bounds.height + GuiGetStyle(DROPDOWNBOX, DROPDOWN_ITEMS_PADDING));
+        for (int i = 0; i < item_counter; i++) {
 
-            if (CheckCollisionPointRec(mouse_point, itemBounds)) {
-                itemFocused = i;
+            item_bounds.y += (bounds.height + GuiGetStyle(DROPDOWNBOX, DROPDOWN_ITEMS_PADDING));
+
+            if (CheckCollisionPointRec(mouse_point, item_bounds)) {
+                focused_item = i;
                 if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
-                    itemSelected = i;
-                    is_clicked = true;     // Item selected, change to editMode = false
+                    selected_item = i;
+                    is_clicked = true;     // Item selected, change to edit_mode = false
                 }
                 break;
             }
         }
 
-        itemBounds = bounds;
+        item_bounds = bounds;
     } else {
         if (CheckCollisionPointRec(mouse_point, bounds)) {
             if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
@@ -577,34 +579,34 @@ bool GuiDropdownBox(Rectangle bounds, const char *text, int *active, bool editMo
 
     // Draw control
     //--------------------------------------------------------------------
-    if (editMode) GuiPanel(boundsOpen);
-
+    if (edit_mode) GuiPanel(open_bounds);
+    Rectangle tmp_rect = GetTextBounds(DEFAULT, bounds);
     GuiDrawRectangle(bounds, GuiGetStyle(DROPDOWNBOX, BORDER_WIDTH),
                      Fade(GetColor(GuiGetStyle(DROPDOWNBOX, BORDER + state * NUMBER_PROPERTIES)), guiAlpha),
                      Fade(GetColor(GuiGetStyle(DROPDOWNBOX, BASE + state * NUMBER_PROPERTIES)), guiAlpha));
-    GuiDrawText(items[itemSelected], GetTextBounds(DEFAULT, bounds), GuiGetStyle(DROPDOWNBOX, TEXT_ALIGNMENT),
+    GuiDrawText(items[selected_item], GetTextBounds(DEFAULT, bounds), GuiGetStyle(DROPDOWNBOX, TEXT_ALIGNMENT),
                 Fade(GetColor(GuiGetStyle(DROPDOWNBOX, TEXT + state * NUMBER_PROPERTIES)), guiAlpha));
 
-    if (editMode) {
+    if (edit_mode) {
         // Draw visible items
-        for (int i = 0; i < itemsCount; i++) {
+        for (int i = 0; i < item_counter; i++) {
             // Update item rectangle y position for next item
-            itemBounds.y += (bounds.height + GuiGetStyle(DROPDOWNBOX, DROPDOWN_ITEMS_PADDING));
+            item_bounds.y += (bounds.height + GuiGetStyle(DROPDOWNBOX, DROPDOWN_ITEMS_PADDING));
 
-            if (i == itemSelected) {
-                GuiDrawRectangle(itemBounds, GuiGetStyle(DROPDOWNBOX, BORDER_WIDTH),
+            if (i == selected_item) {
+                GuiDrawRectangle(item_bounds, GuiGetStyle(DROPDOWNBOX, BORDER_WIDTH),
                                  Fade(GetColor(GuiGetStyle(DROPDOWNBOX, BORDER_COLOR_PRESSED)), guiAlpha),
                                  Fade(GetColor(GuiGetStyle(DROPDOWNBOX, BASE_COLOR_PRESSED)), guiAlpha));
-                GuiDrawText(items[i], GetTextBounds(DEFAULT, itemBounds), GuiGetStyle(DROPDOWNBOX, TEXT_ALIGNMENT),
+                GuiDrawText(items[i], GetTextBounds(DEFAULT, item_bounds), GuiGetStyle(DROPDOWNBOX, TEXT_ALIGNMENT),
                             Fade(GetColor(GuiGetStyle(DROPDOWNBOX, TEXT_COLOR_PRESSED)), guiAlpha));
-            } else if (i == itemFocused) {
-                GuiDrawRectangle(itemBounds, GuiGetStyle(DROPDOWNBOX, BORDER_WIDTH),
+            } else if (i == focused_item) {
+                GuiDrawRectangle(item_bounds, GuiGetStyle(DROPDOWNBOX, BORDER_WIDTH),
                                  Fade(GetColor(GuiGetStyle(DROPDOWNBOX, BORDER_COLOR_FOCUSED)), guiAlpha),
                                  Fade(GetColor(GuiGetStyle(DROPDOWNBOX, BASE_COLOR_FOCUSED)), guiAlpha));
-                GuiDrawText(items[i], GetTextBounds(DEFAULT, itemBounds), GuiGetStyle(DROPDOWNBOX, TEXT_ALIGNMENT),
+                GuiDrawText(items[i], GetTextBounds(DEFAULT, item_bounds), GuiGetStyle(DROPDOWNBOX, TEXT_ALIGNMENT),
                             Fade(GetColor(GuiGetStyle(DROPDOWNBOX, TEXT_COLOR_FOCUSED)), guiAlpha));
             } else
-                GuiDrawText(items[i], GetTextBounds(DEFAULT, itemBounds), GuiGetStyle(DROPDOWNBOX, TEXT_ALIGNMENT),
+                GuiDrawText(items[i], GetTextBounds(DEFAULT, item_bounds), GuiGetStyle(DROPDOWNBOX, TEXT_ALIGNMENT),
                             Fade(GetColor(GuiGetStyle(DROPDOWNBOX, TEXT_COLOR_NORMAL)), guiAlpha));
         }
     }
@@ -618,11 +620,7 @@ bool GuiDropdownBox(Rectangle bounds, const char *text, int *active, bool editMo
                             bounds.y + bounds.height / 2 - 2},
                  Fade(GetColor(GuiGetStyle(DROPDOWNBOX, TEXT + (state * NUMBER_PROPERTIES))), guiAlpha));
 
-    //GuiDrawText("v", RAYGUI_CLITERAL(Rectangle){ bounds.x + bounds.width - GuiGetStyle(DROPDOWNBOX, ARROW_PADDING), bounds.y + bounds.height/2 - 2, 10, 10 },
-    //            GUI_TEXT_ALIGN_CENTER, Fade(GetColor(GuiGetStyle(DROPDOWNBOX, TEXT + (state*3))), guiAlpha));
-    //--------------------------------------------------------------------
-
-    *active = itemSelected;
+    *active = selected_item;
     return is_clicked;
 }
 

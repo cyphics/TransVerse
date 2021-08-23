@@ -1,0 +1,11 @@
+- /lib
+- /build
+- /CMakeFiles
+- GPATH
+- GRTAGS
+- GTAGS
+- TAGS
+- build/
+- /.idea/
+- /cmake-build-debug/
+- CMakeLists.txt
