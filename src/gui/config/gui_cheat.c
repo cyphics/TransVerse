@@ -73,19 +73,19 @@ void DrawConfigLine(struct ConfigLine *line) {
 
     GuiLabel(LabelRect, line->label);
     if (GuiTextEdit(ValueRect, line->valueString, line->valueEditMode)) line->valueEditMode = !line->valueEditMode;
-    if (GuiButton(SetButtonRect, "SET")) {
+    if (GuiButton(SetButtonRect, "SET", true)) {
         if (IsStringValidDouble(line->valueString)) {
             *(line->game_value) = StringToDouble(line->valueString) * distance_std.list[line->dropDownActive].value;
             printf(" set to %s!\n", line->valueString);
         } else printf(" value %s of wrong format. Aborting conversion\n", line->valueString);
     }
-    if (GuiButton(AddButtonRect, "ADD")) {
+    if (GuiButton(AddButtonRect, "ADD", true)) {
         if (IsStringValidDouble(line->valueString)) {
             *line->game_value += StringToDouble(line->valueString) * distance_std.list[line->dropDownActive].value;
             printf(" added by %s!\n", line->valueString);
         } else printf(" value %s of wrong format. Aborting conversion\n", line->valueString);
     }
-    if (GuiButton(MultiplyButtonRect, "MULT")) {
+    if (GuiButton(MultiplyButtonRect, "MULT", true)) {
         if (IsStringValidDouble(line->valueString)) {
             *line->game_value *= StringToDouble(line->valueString);
             mult_counter++;
@@ -102,6 +102,4 @@ void DrawCheatsTab() {
     DrawConfigLine(&distanceLine);
     DrawConfigLine(&accelerationLine);
     DrawConfigLine(&speedLine);
-
-
 }

@@ -21,6 +21,9 @@
 #include "gui_engine.h"
 #include "../gui_utils.h"
 
+bool is_in_dashboard = false;
+bool print_debug = false;
+
 static const float tab_height = 30;
 
 static Rectangle types_tab_rect;
@@ -48,6 +51,9 @@ static int number_structure_upgrades = 0;
 static int number_science_upgrades = 0;
 static int number_soft_upgrades = 0;
 static int number_incremental_upgrades = 0;
+
+static int upgrade_rect_width = 100;
+static int upgrade_rect_height = 30;
 
 static Interact availStructInter[MAX_UPGRADE_PER_TYPE] = {};
 static Interact availScienceInter[MAX_UPGRADE_PER_TYPE] = {};
@@ -105,10 +111,6 @@ void RefreshUpgradesLists() {
     }
 }
 
-
-
-
-
 void InitGameUI(Vector2 anchor) {
 
     game_sub_border.x = anchor.x;
@@ -141,7 +143,6 @@ void InitGameUI(Vector2 anchor) {
     remaining_time_value_rect = remaining_time_label_rect;
     remaining_time_value_rect.x += 80;
 
-
     // TABS
     types_tab_rect.x = dashboard_border_rect.x  + PADDING;
     types_tab_rect.y = dashboard_border_rect.y + dashboard_border_rect.height+ PADDING;
@@ -152,36 +153,28 @@ void InitGameUI(Vector2 anchor) {
 
     upgrade_list_anchor.x = types_tab_rect.x;
     upgrade_list_anchor.y = types_tab_rect.y + types_tab_rect.height + PADDING;
-
-
-
-//    ResizeEditor(available_upgrade_rect.x + available_upgrade_rect.width + padding * 4, available_upgrade_rect.y);
     RefreshUpgradesLists();
 }
 
-
-
 void InitEngineScreen(int anchorX, int anchorY) {
-
     milestonesRect.x = anchorX;
     milestonesRect.y = anchorY;
     milestoneLine.bounds.x = milestonesRect.x + PADDING;
     milestoneLine.bounds.width = dashboard_distance_line.bounds.width;
     milestoneLine.bounds.height = dashboard_distance_line.bounds.height;
-
 }
 
 void DrawUpgrade(UpgradeInfo info, Vector2 anchor, bool *isClicked) {
-    DrawText(info.name, anchor.x, anchor.y, FONT_SIZE, BLACK);
+    Rectangle bounds = {anchor.x, anchor.y, upgrade_rect_width, upgrade_rect_height};
+    GuiButton(bounds, info.name, true);
     *isClicked = false;
 }
 
 void DrawUpgradesList(UpgradeInfo *upgrades_list, int list_length, Vector2 anchor){
-    int upgrade_height = 30;
     bool isClicked;
 
     for (int i = 0; i < list_length; ++i) {
-        Vector2 p = {anchor.x,   anchor.y + upgrade_height * i};
+        Vector2 p = {anchor.x,   anchor.y + (upgrade_rect_height + PADDING)* i};
         UpgradeInfo info = upgrades_list[i];
         DrawUpgrade(info, p, &isClicked);
 
@@ -198,23 +191,21 @@ void DrawValueWithSelectableUnit(struct DataLine *line, u_phys value) {
     float unit_select_width = 100;
     float unit_width = 20;
     float line_height = line->bounds.height;
-    Rectangle labelRect = {line->bounds.x, line->bounds.y, label_width, line_height};
-    Rectangle valueRect = {labelRect.x + labelRect.width + PADDING, line->bounds.y, value_width, line_height};
-    Rectangle unitDropdownRect = {valueRect.x + valueRect.width + PADDING, line->bounds.y, unit_select_width,
+    Rectangle label_rect = {line->bounds.x, line->bounds.y, label_width, line_height};
+    Rectangle value_rect = {label_rect.x + label_rect.width + PADDING, line->bounds.y, value_width, line_height};
+    Rectangle unit_dropdown_rect = {value_rect.x + value_rect.width + PADDING, line->bounds.y, unit_select_width,
                                   line_height};
-    Rectangle unitRect = {unitDropdownRect.x + unitDropdownRect.width + PADDING, line->bounds.y, unit_width,
+    Rectangle unit_rect = {unit_dropdown_rect.x + unit_dropdown_rect.width + PADDING, line->bounds.y, unit_width,
                           line_height};
-
-
     char data_to_string[100];
-
     sprintf(data_to_string, "%.3e", value / distance_std.list[line->dropDownActive].value);
-    GuiLabel(labelRect, line->label);
-    GuiLabel(valueRect, data_to_string);
-    GuiLabel(unitRect, "/ second");
-
-    if (GuiDropdownBox(unitDropdownRect, DistanceUnitsListString, &line->dropDownActive, line->dropDownEdit))
+    GuiLabel(label_rect, line->label);
+    GuiLabel(value_rect, data_to_string);
+    GuiLabel(unit_rect, "/ second");
+    if(is_in_dashboard) print_debug = true;
+    if (GuiDropdownBox(unit_dropdown_rect, DistanceUnitsListString, &line->dropDownActive, line->dropDownEdit))
         line->dropDownEdit = !line->dropDownEdit;
+    print_debug = false;
 }
 
 void DrawTerminalTab() {
@@ -268,15 +259,19 @@ void DrawEngineTab() {
 
 
 void DrawDashboard(){
+
     DrawRectangleLinesEx(dashboard_border_rect, 1, BLACK);
     GuiLabel(remaining_time_label_rect, "Remaining time: ");
     u_time remaining_time = GetRemainingTime();
     char time_to_str[100];
     TimeToStr(time_to_str, remaining_time);
     GuiLabel(remaining_time_value_rect, time_to_str);
+    is_in_dashboard = true;
     DrawValueWithSelectableUnit(&dashboard_distance_line, GetTraveledDistance());
+    is_in_dashboard = false;
     DrawValueWithSelectableUnit(&dashboard_acceleration_line, GetCurrentAcceleration());
     DrawValueWithSelectableUnit(&dashboard_speed_line, GetCurrentSpeed());
+
 }
 
 void DrawGame() {
